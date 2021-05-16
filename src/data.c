@@ -13,6 +13,8 @@ void data_free(struct Data* data) {
         case DATA_BUFFER:
             free(data->content.buf.data);
             return;
+        case DATA_STRING:
+            free(data->content.str);
         default:
             return;
     }

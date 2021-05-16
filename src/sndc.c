@@ -1,39 +1,53 @@
-#include <stdio.h>
-
 #include "sndc.h"
 
 int main(int argc, char** argv) {
-    struct Module* m;
-    struct Node* n;
     struct Stack s;
+    FILE *in = NULL, *out = NULL;
+    char ok = 0;
 
-    if (!module_load_all()) return 1;
-    stack_init(&s);
-
-    if (!(m = module_find("sin"))) return 1;
-    if (!(n = stack_node_new_from_module(&s, "base", m))) return 1;
-
-    n->inputs[0] = stack_data_new(&s);
-    n->inputs[0]->type = DATA_FLOAT;
-    n->inputs[0]->content.f = 440;
-
-    n->inputs[1] = stack_data_new(&s);
-    n->inputs[1]->type = DATA_FLOAT;
-    n->inputs[1]->content.f = 5;
-
-    n->inputs[2] = stack_data_new(&s);
-    n->inputs[2]->type = DATA_FLOAT;
-    n->inputs[2]->content.f = 44100;
-
-    n->outputs[0] = stack_data_new(&s);
-    n->outputs[0]->type = DATA_BUFFER;
-
-
-    if (stack_valid(&s)) {
-        stack_process(&s);
+    if (argc < 2) {
+        in = stdin;
+    } else {
+        if (!(in = fopen(argv[1], "r"))) {
+            fprintf(stderr, "Error: can't open %s for lecture\n", argv[1]);
+            return 1;
+        }
     }
-    fwrite(n->outputs[0]->content.buf.data, sizeof(float),n->outputs[0]->content.buf.size, stdout);
-    stack_free(&s);
 
-    return 0;
+    if (argc < 3) {
+        out = stdout;
+    } else {
+        if (!(out = fopen(argv[2], "r"))) {
+            fprintf(stderr, "Error: can't open %s for writing\n", argv[2]);
+            fclose(in);
+            return 1;
+        }
+    }
+
+    stack_init(&s);
+    if (!module_load_all()) {
+        fprintf(stderr, "Error: loading modules failed\n");
+    } else if (!stack_load(&s, in)) {
+        fprintf(stderr, "Error: loading stack failed\n");
+    } else if (!stack_valid(&s)) {
+        fprintf(stderr, "Error: stack invalid\n");
+    } else if (!stack_process(&s)) {
+        fprintf(stderr, "Error: processing stack failed\n");
+    } else {
+        struct Node* n = s.nodes + s.numNodes - 1;
+        struct Data* data;
+
+        if ((data = n->outputs[0]) && data->type == DATA_BUFFER) {
+            fwrite(data->content.buf.data,
+                   sizeof(float),
+                   data->content.buf.size,
+                   out);
+        }
+        ok = 1;
+    }
+    stack_free(&s);
+    if (in) fclose(in);
+    if (out) fclose(out);
+
+    return !ok;
 }

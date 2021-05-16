@@ -1,5 +1,7 @@
+#include <stdio.h>
+
 #ifndef SDNC_H
-#define SNDC_H
+#define SDNC_H
 
 #define MAX_INPUTS  16
 #define MAX_OUTPUTS 16
@@ -13,12 +15,14 @@ struct Buffer {
 
 struct Data {
     enum DataType {
-        DATA_BUFFER,
-        DATA_FLOAT
+        DATA_BUFFER     = 1 << 0,
+        DATA_FLOAT      = 1 << 1,
+        DATA_STRING     = 1 << 2
     } type;
     union DataContent {
         struct Buffer buf;
         float f;
+        char* str;
     } content;
     char ready;
 };
@@ -30,9 +34,13 @@ void data_free(struct Data* data);
 struct Node {
     struct Data* inputs[MAX_INPUTS];
     struct Data* outputs[MAX_OUTPUTS];
-    int (*valid)(struct Node*);
+
+    int (*setup)(struct Node*);
     int (*process)(struct Node*);
+    int (*teardown)(struct Node* node);
+
     const char* name;
+    const char* module;
 };
 
 void node_init(struct Node* node);
@@ -44,8 +52,9 @@ struct Module {
     const char* inputNames[MAX_INPUTS];
     const char* outputNames[MAX_INPUTS];
 
-    int (*valid)(struct Node* node);
+    int (*setup)(struct Node* node);
     int (*process)(struct Node* node);
+    int (*teardown)(struct Node* node);
 };
 
 extern struct Module modules[MAX_MODULES];
@@ -72,5 +81,6 @@ struct Data* stack_data_new(struct Stack* stack);
 struct Node* stack_get_node(struct Stack* stack, const char* name);
 int stack_valid(struct Stack* stack);
 int stack_process(struct Stack* stack);
+int stack_load(struct Stack* stack, FILE* in);
 
 #endif

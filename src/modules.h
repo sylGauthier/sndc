@@ -3,6 +3,6 @@
 
 struct Module;
 
-int sin_load(struct Module* module);
+int osc_load(struct Module* module);
 
 #endif

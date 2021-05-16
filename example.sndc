@@ -1,19 +1,7 @@
-base: sin {
-    input: buf;
-    freq: 440;
-    amp: 1;
+base: osc {
+    function: "saw";
+    freq: 40;
     sampling: 44100;
     duration: 5;
-}
-
-e: envelop {
-    input: base;
-    attack: 0.1;
-    sustain: 1;
-    decay: 1;
-}
-
-f: lpfilter {
-    input: e;
-    cutoff: 110;
+    param: 0.3;
 }

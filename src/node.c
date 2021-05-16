@@ -13,11 +13,16 @@ void node_init(struct Node* node) {
     for (i = 0; i < MAX_OUTPUTS; i++) {
         node->outputs[i] = NULL;
     }
-    node->valid = NULL;
+    node->setup = NULL;
     node->process = NULL;
+    node->teardown = NULL;
 }
 
 void node_free(struct Node* node) {
+    if (node->teardown) {
+        node->teardown(node);
+    }
+    free((char*)node->name);
 }
 
 void stack_init(struct Stack* stack) {
@@ -30,14 +35,14 @@ void stack_init(struct Stack* stack) {
 void stack_free(struct Stack* stack) {
     unsigned int i;
 
-    for (i = 0; i < stack->numData; i++) {
-        data_free(stack->data + i);
-    }
-    free(stack->data);
     for (i = 0; i < stack->numNodes; i++) {
         node_free(stack->nodes + i);
     }
     free(stack->nodes);
+    for (i = 0; i < stack->numData; i++) {
+        data_free(stack->data + i);
+    }
+    free(stack->data);
 }
 
 struct Node* stack_node_new_from_module(struct Stack* stack,
@@ -45,6 +50,7 @@ struct Node* stack_node_new_from_module(struct Stack* stack,
                                         struct Module* module) {
     void* tmp;
     struct Node* new;
+    unsigned int i;
 
     if (!(tmp = realloc(stack->nodes,
                         (stack->numNodes + 1) * sizeof(struct Node)))) {
@@ -54,8 +60,21 @@ struct Node* stack_node_new_from_module(struct Stack* stack,
     new = stack->nodes + (stack->numNodes++);
     node_init(new);
     new->name = name;
-    new->valid = module->valid;
+    new->module = module->name;
+    new->setup = module->setup;
     new->process = module->process;
+    new->teardown = module->teardown;
+    for (i = 0; i < MAX_OUTPUTS; i++) {
+        if (module->outputNames[i]) {
+            struct Data* data;
+
+            if (!(data = stack_data_new(stack))) {
+                stack->numNodes--;
+                return NULL;
+            }
+            new->outputs[i] = data;
+        }
+    }
     return new;
 }
 
@@ -85,15 +104,6 @@ struct Node* stack_get_node(struct Stack* stack, const char* name) {
 }
 
 int stack_valid(struct Stack* stack) {
-    unsigned int i;
-
-    for (i = 0; i < stack->numNodes; i++) {
-        if (!stack->nodes[i].valid(stack->nodes + i)) {
-            fprintf(stderr, "Error: validation for %s failed\n",
-                    stack->nodes[i].name);
-            return 0;
-        }
-    }
     return 1;
 }
 
