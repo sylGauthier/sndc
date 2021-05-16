@@ -1,7 +1,18 @@
-base: osc {
-    function: "saw";
-    freq: 40;
+saw: osc {
+    function: "sin";
+    freq: 440;
     sampling: 44100;
     duration: 5;
     param: 0.3;
+}
+
+sin: osc {
+    function: "sin";
+    freq: 330;
+    duration: 5;
+}
+
+mixer: mix {
+    input0: saw.out;
+    input1: sin.out;
 }

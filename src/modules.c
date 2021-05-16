@@ -19,6 +19,7 @@ static int load_module(int (*load)(struct Module*)) {
 /* add new modules here */
 int module_load_all() {
     if (!load_module(osc_load)) return 0;
+    if (!load_module(mix_load)) return 0;
 
     return 1;
 }

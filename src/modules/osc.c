@@ -24,9 +24,6 @@
 #define SPL_N "sampling"
 #define OUT_N "out"
 
-#define REQUIRED 1
-#define OPTIONAL 0
-
 #define RES 2048
 
 static int osc_setup(struct Node* n) {
@@ -156,10 +153,6 @@ static int osc_process(struct Node* n) {
     return 1;
 }
 
-static int osc_teardown(struct Node* n) {
-    return 1;
-}
-
 int osc_load(struct Module* m) {
     m->name = MODULE_N;
 
@@ -173,6 +166,5 @@ int osc_load(struct Module* m) {
 
     m->setup = osc_setup;
     m->process = osc_process;
-    m->teardown = osc_teardown;
     return 1;
 }
