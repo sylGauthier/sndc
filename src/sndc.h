@@ -47,23 +47,28 @@ void node_init(struct Node* node);
 void node_free(struct Node* node);
 
 
+struct DataDesc {
+    const char* name;
+    int type;
+    char req;
+};
+
 struct Module {
     const char* name;
-    const char* inputNames[MAX_INPUTS];
-    const char* outputNames[MAX_INPUTS];
+    struct DataDesc inputs[MAX_INPUTS];
+    struct DataDesc outputs[MAX_INPUTS];
 
     int (*setup)(struct Node* node);
     int (*process)(struct Node* node);
     int (*teardown)(struct Node* node);
 };
 
-extern struct Module modules[MAX_MODULES];
-extern unsigned int numModules;
+extern const struct Module* modules[];
 
 int module_load_all();
-struct Module* module_find(const char* name);
-int module_get_input_slot(struct Module* module, const char* name);
-int module_get_output_slot(struct Module* module, const char* name);
+const struct Module* module_find(const char* name);
+int module_get_input_slot(const struct Module* module, const char* name);
+int module_get_output_slot(const struct Module* module, const char* name);
 
 
 struct Stack {
@@ -76,7 +81,7 @@ void stack_init(struct Stack* stack);
 void stack_free(struct Stack* stack);
 struct Node* stack_node_new_from_module(struct Stack* stack,
                                         const char* name,
-                                        struct Module* module);
+                                        const struct Module* module);
 struct Data* stack_data_new(struct Stack* stack);
 struct Node* stack_get_node(struct Stack* stack, const char* name);
 int stack_valid(struct Stack* stack);

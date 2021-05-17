@@ -2,21 +2,22 @@
 
 #include "utils.h"
 
-int data_valid(struct Data* data, int type, char required,
-               const char* ctx, const char* name) {
-    if (!data && !required) return 1;
+int data_valid(struct Data* data,
+               const struct DataDesc* desc,
+               const char* ctx) {
+    if (!data && !desc->req) return 1;
     if (!data) {
-        fprintf(stderr, "Error: %s: %s is required\n", ctx, name);
+        fprintf(stderr, "Error: %s: %s is required\n", ctx, desc->name);
         return 0;
     }
-    if (!(data->type & type)) {
+    if (!(data->type & desc->type)) {
         fprintf(stderr, "Error: %s: %s expects type %d but got %d\n",
-                        ctx, name, type, data->type);
+                        ctx, desc->name, desc->type, data->type);
         return 0;
     }
     if (data->type == DATA_STRING && !data->content.str) {
         fprintf(stderr, "Error: %s: %s has a NULL string\n",
-                        ctx, name);
+                        ctx, desc->name);
         return 0;
     }
     return 1;

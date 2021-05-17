@@ -47,7 +47,7 @@ void stack_free(struct Stack* stack) {
 
 struct Node* stack_node_new_from_module(struct Stack* stack,
                                         const char* name,
-                                        struct Module* module) {
+                                        const struct Module* module) {
     void* tmp;
     struct Node* new;
     unsigned int i;
@@ -65,7 +65,7 @@ struct Node* stack_node_new_from_module(struct Stack* stack,
     new->process = module->process;
     new->teardown = module->teardown;
     for (i = 0; i < MAX_OUTPUTS; i++) {
-        if (module->outputNames[i]) {
+        if (module->outputs[i].name) {
             struct Data* data;
 
             if (!(data = stack_data_new(stack))) {

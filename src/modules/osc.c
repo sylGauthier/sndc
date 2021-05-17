@@ -5,47 +5,74 @@
 #include <math.h>
 
 #include "../sndc.h"
-#include "../modules.h"
 #include "utils.h"
 
-#define MODULE_N "osc"
-
-#define FUN 0
-#define FRQ 1
-#define PRM 2
-#define DUR 3
-#define SPL 4
+#define RES 2048
 #define OUT 0
 
-#define FUN_N "function"
-#define FRQ_N "freq"
-#define PRM_N "param"
-#define DUR_N "duration"
-#define SPL_N "sampling"
-#define OUT_N "out"
+static int osc_process(struct Node* n);
+static int osc_setup(struct Node* n);
 
-#define RES 2048
+const struct Module osc = {
+    "osc",
+    {
+        {"function",    DATA_STRING,                REQUIRED},
+        {"freq",        DATA_FLOAT | DATA_BUFFER,   REQUIRED},
+        {"offset",      DATA_FLOAT | DATA_BUFFER,   OPTIONAL},
+        {"amplitude",   DATA_FLOAT | DATA_BUFFER,   OPTIONAL},
+        {"param",       DATA_FLOAT,                 OPTIONAL},
+        {"duration",    DATA_FLOAT,                 REQUIRED},
+        {"sampling",    DATA_FLOAT,                 OPTIONAL}
+    },
+    {
+        {"out",         DATA_BUFFER,                REQUIRED}
+    },
+    osc_setup,
+    osc_process,
+    NULL
+};
+
+enum OscInputType {
+    FUN,
+    FRQ,
+    OFF,
+    AMP,
+    PRM,
+    DUR,
+    SPL,
+    NUM_INPUTS
+};
 
 static int osc_setup(struct Node* n) {
     char* fun;
+    unsigned int i;
 
-    if (   !data_valid(n->inputs[FRQ], DATA_FLOAT | DATA_BUFFER,
-                       REQUIRED, n->name, FRQ_N)
-        || !data_valid(n->inputs[PRM], DATA_FLOAT, OPTIONAL, n->name, PRM_N)
-        || !data_valid(n->inputs[DUR], DATA_FLOAT, REQUIRED, n->name, DUR_N)
-        || !data_valid(n->inputs[SPL], DATA_FLOAT, OPTIONAL, n->name, SPL_N)
-        || !data_valid(n->inputs[FUN], DATA_STRING, REQUIRED, n->name, FUN_N)
-        || !n->outputs[OUT]) {
+    if (NUM_INPUTS > MAX_INPUTS) {
+        fprintf(stderr, "Error: %s: NUM_INPUTS (%d) exceeds MAX_INPUTS (%d)\n",
+                        osc.name, NUM_INPUTS, MAX_INPUTS);
         return 0;
+    }
+    for (i = 0; i < NUM_INPUTS; i++) {
+        if (!data_valid(n->inputs[i], osc.inputs + i, n->name)) {
+            return 0;
+        }
     }
     fun = n->inputs[FUN]->content.str;
     if (strcmp(fun, "sin") && strcmp(fun, "saw") && strcmp(fun, "square")) {
         fprintf(stderr, "Error: %s: "
                         "%s must be one of 'sin', 'saw', 'square'\n",
-                        n->name, FUN_N);
+                        n->name, osc.inputs[FUN].name);
         return 0;
     }
+
     n->outputs[OUT]->type = DATA_BUFFER;
+    if (n->inputs[SPL]) {
+        n->outputs[OUT]->content.buf.samplingRate = n->inputs[SPL]->content.f;
+    } else {
+        n->outputs[OUT]->content.buf.samplingRate = 44100;
+    }
+    n->outputs[OUT]->content.buf.size = n->inputs[DUR]->content.f
+            * n->outputs[OUT]->content.buf.samplingRate;
     return 1;
 }
 
@@ -150,21 +177,5 @@ static int osc_process(struct Node* n) {
     out->content.buf.data = data;
     out->content.buf.size = d * s;
     out->ready = 1;
-    return 1;
-}
-
-int osc_load(struct Module* m) {
-    m->name = MODULE_N;
-
-    m->inputNames[FUN] = FUN_N;
-    m->inputNames[PRM] = PRM_N;
-    m->inputNames[FRQ] = FRQ_N;
-    m->inputNames[DUR] = DUR_N;
-    m->inputNames[SPL] = SPL_N;
-
-    m->outputNames[OUT] = OUT_N;
-
-    m->setup = osc_setup;
-    m->process = osc_process;
     return 1;
 }

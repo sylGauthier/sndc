@@ -34,7 +34,7 @@ static int parse_data(struct Stack* s,
                       struct Data** data) {
     int token, slot, ok = 0;
     struct Node* ref;
-    struct Module* m;
+    const struct Module* m;
 
     switch ((token = yylex())) {
         case DEC_LIT:
@@ -100,7 +100,7 @@ static int parse_data(struct Stack* s,
 
 static int parse_input(struct Stack* s,
                        struct Node* n,
-                       struct Module* m,
+                       const struct Module* m,
                        int* err) {
     int token, slot;
     struct Data* data;
@@ -132,7 +132,7 @@ static int parse_input(struct Stack* s,
 
 static int parse_node(struct Stack* s, int* err) {
     char* name = NULL;
-    struct Module* module;
+    const struct Module* module;
     struct Node* node;
     int token;
 

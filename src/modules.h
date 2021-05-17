@@ -1,9 +1,8 @@
-#ifndef MODULES_H
-#define MODULES_H
+extern const struct Module osc;
+extern const struct Module mix;
 
-struct Module;
-
-int osc_load(struct Module* module);
-int mix_load(struct Module* module);
-
-#endif
+const struct Module* modules[] = {
+    &osc,
+    &mix,
+    NULL
+};

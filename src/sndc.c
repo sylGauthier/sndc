@@ -25,9 +25,7 @@ int main(int argc, char** argv) {
     }
 
     stack_init(&s);
-    if (!module_load_all()) {
-        fprintf(stderr, "Error: loading modules failed\n");
-    } else if (!stack_load(&s, in)) {
+    if (!stack_load(&s, in)) {
         fprintf(stderr, "Error: loading stack failed\n");
     } else if (!stack_valid(&s)) {
         fprintf(stderr, "Error: stack invalid\n");

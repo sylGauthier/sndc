@@ -2,10 +2,7 @@
 #include <math.h>
 
 #include "../sndc.h"
-#include "../modules.h"
 #include "utils.h"
-
-#define MODULE_N "mix"
 
 #define IN0 0
 #define IN1 1
@@ -13,21 +10,49 @@
 #define IN3 3
 #define OUT 0
 
-#define IN0_N "input0"
-#define IN1_N "input1"
-#define IN2_N "input2"
-#define IN3_N "input3"
-#define OUT_N "out"
+static int mix_process(struct Node* n);
+static int mix_setup(struct Node* n);
+
+const struct Module mix = {
+    "mix",
+    {
+        {"input0",  DATA_BUFFER,    REQUIRED},
+        {"input1",  DATA_BUFFER,    REQUIRED},
+        {"input2",  DATA_BUFFER,    OPTIONAL},
+        {"input3",  DATA_BUFFER,    OPTIONAL}
+    },
+    {
+        {"out",     DATA_BUFFER,    REQUIRED}
+    },
+    mix_setup,
+    mix_process,
+    NULL
+};
 
 static int mix_setup(struct Node* n) {
-    if (   !data_valid(n->inputs[IN0], DATA_BUFFER, REQUIRED, n->name, IN0_N)
-        || !data_valid(n->inputs[IN1], DATA_BUFFER, REQUIRED, n->name, IN1_N)
-        || !data_valid(n->inputs[IN2], DATA_BUFFER, OPTIONAL, n->name, IN2_N)
-        || !data_valid(n->inputs[IN3], DATA_BUFFER, OPTIONAL, n->name, IN3_N)
-        || !n->outputs[OUT]) {
-        return 0;
+    unsigned int maxSize = 0, i;
+
+    for (i = 0; i < 4; i++) {
+        if (!data_valid(n->inputs[i], mix.inputs + i, n->name)) {
+            return 0;
+        }
+        if (n->inputs[i]) {
+            if (n->inputs[i]->content.buf.size > maxSize) {
+                maxSize = n->inputs[i]->content.buf.size;
+            }
+            if (n->inputs[i]->content.buf.samplingRate !=
+                    n->inputs[0]->content.buf.samplingRate) {
+                fprintf(stderr, "Error: %s:"
+                                "input buffers have inconsistent samplingRate",
+                                n->name);
+                return 0;
+            }
+        }
     }
     n->outputs[OUT]->type = DATA_BUFFER;
+    n->outputs[OUT]->content.buf.size = maxSize;
+    n->outputs[OUT]->content.buf.samplingRate =
+        n->inputs[0]->content.buf.samplingRate;
     return 1;
 }
 
@@ -83,20 +108,5 @@ static int mix_process(struct Node* n) {
     out->content.buf.data = res;
     out->content.buf.size = maxSize;
     out->content.buf.samplingRate = sr[0];
-    return 1;
-}
-
-int mix_load(struct Module* m) {
-    m->name = MODULE_N;
-
-    m->inputNames[IN0] = IN0_N;
-    m->inputNames[IN1] = IN1_N;
-    m->inputNames[IN2] = IN2_N;
-    m->inputNames[IN3] = IN3_N;
-
-    m->outputNames[OUT] = OUT_N;
-
-    m->setup = mix_setup;
-    m->process = mix_process;
     return 1;
 }

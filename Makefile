@@ -1,4 +1,4 @@
-CFLAGS ?= -std=c89 -pedantic -march=native -Wall -Wno-unused-function -g -D_XOPEN_SOURCE=500
+CFLAGS ?= -std=c89 -pedantic -march=native -Wall -Wno-unused-function -g
 LDLIBS += -lm
 LDFLAGS += -lm
 
