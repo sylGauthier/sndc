@@ -1,4 +1,4 @@
-CFLAGS ?= -std=c89 -pedantic -march=native -Wall -Wno-unused-function -g
+CFLAGS ?= -std=c89 -pedantic -march=native -Wall -Wno-unused-function -O3
 LDLIBS += -lm
 LDFLAGS += -lm
 

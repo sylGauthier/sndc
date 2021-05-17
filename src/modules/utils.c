@@ -23,6 +23,18 @@ int data_valid(struct Data* data,
     return 1;
 }
 
+float data_float(struct Data* data, float s, float def) {
+    if (!data) return def;
+    switch (data->type) {
+        case DATA_FLOAT:
+            return data->content.f;
+        case DATA_BUFFER:
+            return interp(data->content.buf.data, data->content.buf.size, s);
+        default:
+            return 0;
+    }
+}
+
 float interp(float* buf, unsigned int size, float t) {
     float a = t * size;
     float f, r;

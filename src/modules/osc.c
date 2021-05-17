@@ -119,7 +119,7 @@ static void make_square(float* buf, unsigned int size, float param) {
 
 static int osc_process(struct Node* n) {
     struct Data* out = n->outputs[OUT];
-    float f, s, d, t, param, *data, wave[RES];
+    float f, s, d, t, amp, off, param, *data, wave[RES];
     const char* fun;
     unsigned int i, size;
 
@@ -152,26 +152,17 @@ static int osc_process(struct Node* n) {
     }
 
     t = 0;
-    if (n->inputs[FRQ]->type == DATA_FLOAT) {
-        float dt;
-        f = n->inputs[FRQ]->content.f;
-        dt = f / s;
-        for (i = 0; i < size; i++) {
-            data[i] = interp(wave, RES, t);
-            t += dt;
-            if (t >= 1) t -= 1;
-        }
-    } else if (n->inputs[FRQ]->type == DATA_BUFFER) {
-        float* fbuf = n->inputs[FRQ]->content.buf.data;
-        unsigned int fsize = n->inputs[FRQ]->content.buf.size;
-        for (i = 0; i < size; i++) {
-            f = interp(fbuf, fsize, (float) i / (float) size);
-            data[i] = interp(wave, RES, t);
-            t += f / s;
-            if (t > 1) t -= 1;
-        }
-    } else {
-        return 0;
+    for (i = 0; i < size; i++) {
+        float x = (float) i / (float) size;
+
+        f = data_float(n->inputs[FRQ], x, 0);
+        amp = data_float(n->inputs[AMP], x, 1);
+        off = data_float(n->inputs[OFF], x, 0);
+
+        data[i] = amp * interp(wave, RES, t) + off;
+
+        t += f / s;
+        if (t > 1) t -= 1;
     }
 
     out->content.buf.data = data;

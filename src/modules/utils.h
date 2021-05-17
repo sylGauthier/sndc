@@ -8,6 +8,7 @@
 #define M_PI 3.14159265358979
 
 int data_valid(struct Data* data, const struct DataDesc* desc, const char* ctx);
+float data_float(struct Data* data, float s, float def);
 
 float interp(float* buf, unsigned int size, float t);
 
