@@ -11,7 +11,7 @@ declit          {digit}(_?{digit})*
 hexdigit        [a-fA-F0-9]
 octdigit        [0-7]
 bindigit        [0-1]
-letter          [a-zA-Z]
+letter          [a-zA-Z_]
 ident           {letter}({letter}|{digit})*
 
 %x IN_COMMENT
