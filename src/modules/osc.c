@@ -155,7 +155,7 @@ static int osc_process(struct Node* n) {
 
     bwave.data = wave;
     bwave.size = RES;
-    bwave.interp = INTERP_STEP;
+    bwave.interp = INTERP_LINEAR;
 
     d = n->inputs[DUR]->content.f;
     fun = n->inputs[FUN]->content.str;

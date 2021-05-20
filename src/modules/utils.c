@@ -83,3 +83,15 @@ float interp(struct Buffer* buf, float t) {
     }
     return 0;
 }
+
+float interpf(int type, float a, float b, float t) {
+    switch (type) {
+        case INTERP_STEP:
+            return a;
+        case INTERP_LINEAR:
+            return a * (1 - t) + b * t;
+        case INTERP_SINE:
+            return (a - b) / 2. * cos(M_PI * t) + (a + b) / 2.;
+    }
+    return 0;
+}

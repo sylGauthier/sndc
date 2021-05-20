@@ -14,5 +14,6 @@ int data_string_valid(struct Data* data, const char* strings[],
                       const char* inputName, const char* nodeName);
 
 float interp(struct Buffer* buf, float t);
+float interpf(int type, float a, float b, float t);
 
 #endif
