@@ -7,10 +7,17 @@
 #define MAX_OUTPUTS 16
 #define MAX_MODULES 16
 
+enum InterpType {
+    INTERP_STEP,
+    INTERP_LINEAR,
+    INTERP_SINE
+};
+
 struct Buffer {
     float* data;
     unsigned int size;
     unsigned int samplingRate;
+    enum InterpType interp;
 };
 
 struct Data {

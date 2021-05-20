@@ -1,4 +1,5 @@
 #include <math.h>
+#include <string.h>
 
 #include "utils.h"
 
@@ -23,26 +24,62 @@ int data_valid(struct Data* data,
     return 1;
 }
 
+int data_parse_interp(struct Data* data) {
+    if (data->type != DATA_STRING) return -1;
+    if (!data->content.str) return -1;
+    if (!strcmp(data->content.str, "step")) return INTERP_STEP;
+    if (!strcmp(data->content.str, "linear")) return INTERP_LINEAR;
+    if (!strcmp(data->content.str, "sine")) return INTERP_SINE;
+    return -1;
+}
+
+int data_string_valid(struct Data* data, const char* strings[],
+                      const char* inputName, const char* nodeName) {
+    unsigned int i;
+
+    if (data->type != DATA_STRING || !data->content.str) {
+        fprintf(stderr, "Error: %s: %s must be a string\n",
+                        nodeName, inputName);
+        return 0;
+    }
+    for (i = 0; strings[i]; i++) {
+        if (!strcmp(data->content.str, strings[i])) return 1;
+    }
+    fprintf(stderr, "Error: %s: %s must be one of:\n", nodeName, inputName);
+    for (i = 0; strings[i]; i++) fprintf(stderr, "%s ", strings[i]);
+    fprintf(stderr, "\n");
+    return 0;
+}
+
 float data_float(struct Data* data, float s, float def) {
     if (!data) return def;
     switch (data->type) {
         case DATA_FLOAT:
             return data->content.f;
         case DATA_BUFFER:
-            return interp(data->content.buf.data, data->content.buf.size, s);
+            return interp(&data->content.buf, s);
         default:
             return 0;
     }
 }
 
-float interp(float* buf, unsigned int size, float t) {
-    float a = t * size;
+float interp(struct Buffer* buf, float t) {
+    float a = t * buf->size;
     float f, r;
     unsigned int i1, i2;
 
     f = floor(a);
     r = a - f;
-    i1 = f;
-    i2 = (i1 + 1) % size;
-    return buf[i1] * (1 - r) + buf[i2] * r;
+    i1 = (unsigned int) f % buf->size;;
+    i2 = (i1 + 1) % buf->size;
+    switch (buf->interp) {
+        case INTERP_STEP:
+            return buf->data[i1];
+        case INTERP_LINEAR:
+            return buf->data[i1] * (1 - r) + buf->data[i2] * r;
+        case INTERP_SINE:
+            return (buf->data[i1] - buf->data[i2]) / 2. * cos(M_PI * r) +
+                   (buf->data[i1] + buf->data[i2]) / 2.;
+    }
+    return 0;
 }

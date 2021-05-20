@@ -22,13 +22,28 @@ const struct Module osc = {
         {"amplitude",   DATA_FLOAT | DATA_BUFFER,   OPTIONAL},
         {"param",       DATA_FLOAT,                 OPTIONAL},
         {"duration",    DATA_FLOAT,                 REQUIRED},
-        {"sampling",    DATA_FLOAT,                 OPTIONAL}
+        {"sampling",    DATA_FLOAT,                 OPTIONAL},
+        {"interp",      DATA_STRING,                OPTIONAL}
     },
     {
         {"out",         DATA_BUFFER,                REQUIRED}
     },
     osc_setup,
     osc_process,
+    NULL
+};
+
+const char* funcNames[] = {
+    "sin",
+    "square",
+    "saw",
+    NULL
+};
+
+const char* interpNames[] = {
+    "step",
+    "linear",
+    "sine",
     NULL
 };
 
@@ -40,12 +55,13 @@ enum OscInputType {
     PRM,
     DUR,
     SPL,
+    ITP,
     NUM_INPUTS
 };
 
 static int osc_setup(struct Node* n) {
-    char* fun;
     unsigned int i;
+    struct Buffer* out;
 
     if (NUM_INPUTS > MAX_INPUTS) {
         fprintf(stderr, "Error: %s: NUM_INPUTS (%d) exceeds MAX_INPUTS (%d)\n",
@@ -57,22 +73,28 @@ static int osc_setup(struct Node* n) {
             return 0;
         }
     }
-    fun = n->inputs[FUN]->content.str;
-    if (strcmp(fun, "sin") && strcmp(fun, "saw") && strcmp(fun, "square")) {
-        fprintf(stderr, "Error: %s: "
-                        "%s must be one of 'sin', 'saw', 'square'\n",
-                        n->name, osc.inputs[FUN].name);
+
+    if (       !data_string_valid(n->inputs[FUN],
+                                  funcNames,
+                                  osc.inputs[FUN].name,
+                                  n->name)
+            || (n->inputs[ITP] && !data_string_valid(n->inputs[ITP],
+                                                     interpNames,
+                                                     osc.inputs[ITP].name,
+                                                     n->name))) {
         return 0;
     }
 
     n->outputs[OUT]->type = DATA_BUFFER;
-    if (n->inputs[SPL]) {
-        n->outputs[OUT]->content.buf.samplingRate = n->inputs[SPL]->content.f;
-    } else {
-        n->outputs[OUT]->content.buf.samplingRate = 44100;
-    }
-    n->outputs[OUT]->content.buf.size = n->inputs[DUR]->content.f
-            * n->outputs[OUT]->content.buf.samplingRate;
+    out = &n->outputs[OUT]->content.buf;
+
+    if (n->inputs[SPL]) out->samplingRate = n->inputs[SPL]->content.f;
+    else out->samplingRate = 44100;
+
+    if (!n->inputs[ITP]) out->interp = INTERP_LINEAR;
+    else if ((out->interp = data_parse_interp(n->inputs[ITP])) < 0) return 0;
+
+    out->size = n->inputs[DUR]->content.f * out->samplingRate;
     return 1;
 }
 
@@ -122,6 +144,11 @@ static int osc_process(struct Node* n) {
     float f, s, d, t, amp, off, param, *data, wave[RES];
     const char* fun;
     unsigned int i, size;
+    struct Buffer bwave;
+
+    bwave.data = wave;
+    bwave.size = RES;
+    bwave.interp = INTERP_STEP;
 
     d = n->inputs[DUR]->content.f;
     fun = n->inputs[FUN]->content.str;
@@ -159,7 +186,7 @@ static int osc_process(struct Node* n) {
         amp = data_float(n->inputs[AMP], x, 1);
         off = data_float(n->inputs[OFF], x, 0);
 
-        data[i] = amp * interp(wave, RES, t) + off;
+        data[i] = amp * interp(&bwave, t) + off;
 
         t += f / s;
         if (t > 1) t -= 1;
