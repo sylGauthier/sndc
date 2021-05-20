@@ -1,18 +1,21 @@
-saw: osc {
-    function: "sin";
-    freq: 440;
-    sampling: 44100;
+sq: osc {
+    function: "square";
+    freq: 1;
+    sampling: 6;
     duration: 5;
-    param: 0.3;
+    interp: "sine";
+
+    amplitude: 100;
+    offset: 440;
 }
 
-sin: osc {
-    function: "sin";
-    freq: 330;
-    duration: 5;
+graph: print {
+    input: sq.out;
+    file: "out";
 }
 
-mixer: mix {
-    input0: saw.out;
-    input1: sin.out;
+sound: osc {
+    function: "sin";
+    freq: sq.out;
+    duration: 5;
 }
