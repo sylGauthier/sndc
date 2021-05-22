@@ -14,7 +14,7 @@ static int mix_process(struct Node* n);
 static int mix_setup(struct Node* n);
 
 const struct Module mix = {
-    "mix",
+    "mix", "Mixer for up to 4 input buffers, will normalize output",
     {
         {"input0",  DATA_BUFFER,    REQUIRED},
         {"input1",  DATA_BUFFER,    REQUIRED},

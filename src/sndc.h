@@ -62,6 +62,7 @@ struct DataDesc {
 
 struct Module {
     const char* name;
+    const char* desc;
     struct DataDesc inputs[MAX_INPUTS];
     struct DataDesc outputs[MAX_INPUTS];
 

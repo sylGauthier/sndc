@@ -11,7 +11,7 @@ static int noise_process(struct Node* n);
 static int noise_setup(struct Node* n);
 
 const struct Module noise = {
-    "noise",
+    "noise", "Noise generator",
     {
         {"duration",    DATA_FLOAT,     REQUIRED},
         {"sampling",    DATA_FLOAT,     OPTIONAL},

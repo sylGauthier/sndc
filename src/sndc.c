@@ -1,9 +1,24 @@
+#include <string.h>
+
 #include "sndc.h"
+
+static void list_modules() {
+    unsigned int i;
+    printf("Available modules:\n");
+    for (i = 0; modules[i]; i++) {
+        printf("    %s - %s\n", modules[i]->name, modules[i]->desc);
+    }
+}
 
 int main(int argc, char** argv) {
     struct Stack s;
     FILE *in = NULL, *out = NULL;
     char ok = 0;
+
+    if (argc > 1 && !strcmp(argv[1], "-l")) {
+        list_modules();
+        return 0;
+    }
 
     if (argc < 2) {
         in = stdin;

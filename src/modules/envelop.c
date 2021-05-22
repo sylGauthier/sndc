@@ -11,7 +11,7 @@ static int env_process(struct Node* n);
 static int env_setup(struct Node* n);
 
 const struct Module env = {
-    "envelop",
+    "envelop", "Apply envelop to input signal",
     {
         {"input",       DATA_BUFFER,    REQUIRED},
         {"attack",      DATA_FLOAT,     REQUIRED},

@@ -9,7 +9,7 @@ static int print_process(struct Node* n);
 static int print_setup(struct Node* n);
 
 const struct Module print = {
-    "print",
+    "print", "Prints input buffer to specified file for plotting/analysis",
     {
         {"input",    DATA_BUFFER,   REQUIRED},
         {"file",     DATA_STRING,   OPTIONAL},
