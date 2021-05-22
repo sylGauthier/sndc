@@ -25,6 +25,7 @@ int data_valid(struct Data* data,
 }
 
 int data_parse_interp(struct Data* data) {
+    if (!data) return -1;
     if (data->type != DATA_STRING) return -1;
     if (!data->content.str) return -1;
     if (!strcmp(data->content.str, "step")) return INTERP_STEP;
