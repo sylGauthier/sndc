@@ -102,6 +102,7 @@ static int osc_setup(struct Node* n) {
     else if ((out->interp = data_parse_interp(n->inputs[ITP])) < 0) return 0;
 
     out->size = n->inputs[DUR]->content.f * out->samplingRate;
+    out->data = NULL;
     return 1;
 }
 

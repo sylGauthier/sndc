@@ -80,8 +80,8 @@ int module_get_output_slot(const struct Module* module, const char* name);
 
 
 struct Stack {
-    struct Data* data;
-    struct Node* nodes;
+    struct Data** data;
+    struct Node** nodes;
     unsigned int numNodes, numData;
 };
 

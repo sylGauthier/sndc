@@ -36,11 +36,13 @@ void stack_free(struct Stack* stack) {
     unsigned int i;
 
     for (i = 0; i < stack->numNodes; i++) {
-        node_free(stack->nodes + i);
+        node_free(stack->nodes[i]);
+        free(stack->nodes[i]);
     }
     free(stack->nodes);
     for (i = 0; i < stack->numData; i++) {
-        data_free(stack->data + i);
+        data_free(stack->data[i]);
+        free(stack->data[i]);
     }
     free(stack->data);
 }
@@ -57,7 +59,10 @@ struct Node* stack_node_new_from_module(struct Stack* stack,
         return NULL;
     }
     stack->nodes = tmp;
-    new = stack->nodes + (stack->numNodes++);
+    if (!(new = malloc(sizeof(struct Node)))) return NULL;
+    stack->nodes[stack->numNodes] = new;
+    stack->numNodes++;
+
     node_init(new);
     new->name = name;
     new->module = module->name;
@@ -82,12 +87,14 @@ struct Data* stack_data_new(struct Stack* stack) {
     void* tmp;
     struct Data* new;
 
-    if (!(tmp = realloc(stack->data,
-                        (stack->numData + 1) * sizeof(struct Data)))) {
+    if (!(tmp = realloc(stack->data, (stack->numData + 1) * sizeof(void*)))) {
         return NULL;
     }
     stack->data = tmp;
-    new = stack->data + (stack->numData++);
+    if (!(new = malloc(sizeof(struct Data)))) return NULL;
+    stack->data[stack->numData] = new;
+    stack->numData++;
+
     data_init(new);
     return new;
 }
@@ -96,8 +103,8 @@ struct Node* stack_get_node(struct Stack* stack, const char* name) {
     unsigned int i;
 
     for (i = 0; i < stack->numNodes; i++) {
-        if (!strcmp(stack->nodes[i].name, name)) {
-            return stack->nodes + i;
+        if (!strcmp(stack->nodes[i]->name, name)) {
+            return stack->nodes[i];
         }
     }
     return NULL;
@@ -111,8 +118,8 @@ int stack_process(struct Stack* stack) {
     unsigned int i;
 
     for (i = 0; i < stack->numNodes; i++) {
-        fprintf(stderr, "Processing %s\n", stack->nodes[i].name);
-        if (!stack->nodes[i].process(stack->nodes + i)) {
+        fprintf(stderr, "Processing %s\n", stack->nodes[i]->name);
+        if (!stack->nodes[i]->process(stack->nodes[i])) {
             fprintf(stderr, "Error: processing failed\n");
             return 0;
         }

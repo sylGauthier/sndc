@@ -47,14 +47,16 @@ int main(int argc, char** argv) {
     } else if (!stack_process(&s)) {
         fprintf(stderr, "Error: processing stack failed\n");
     } else {
-        struct Node* n = s.nodes + s.numNodes - 1;
-        struct Data* data;
+        if (s.numNodes) {
+            struct Node* n = s.nodes[s.numNodes - 1];
+            struct Data* data;
 
-        if ((data = n->outputs[0]) && data->type == DATA_BUFFER) {
-            fwrite(data->content.buf.data,
-                   sizeof(float),
-                   data->content.buf.size,
-                   out);
+            if ((data = n->outputs[0]) && data->type == DATA_BUFFER) {
+                fwrite(data->content.buf.data,
+                        sizeof(float),
+                        data->content.buf.size,
+                        out);
+            }
         }
         ok = 1;
     }
