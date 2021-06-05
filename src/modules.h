@@ -4,6 +4,8 @@ extern const struct Module print;
 extern const struct Module env;
 extern const struct Module noise;
 extern const struct Module filter;
+extern const struct Module add;
+extern const struct Module mul;
 
 const struct Module* modules[] = {
     &osc,
@@ -12,5 +14,7 @@ const struct Module* modules[] = {
     &env,
     &noise,
     &filter,
+    &add,
+    &mul,
     NULL
 };
