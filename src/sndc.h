@@ -5,7 +5,6 @@
 
 #define MAX_INPUTS  16
 #define MAX_OUTPUTS 16
-#define MAX_MODULES 16
 
 enum InterpType {
     INTERP_STEP,
@@ -64,7 +63,7 @@ struct Module {
     const char* name;
     const char* desc;
     struct DataDesc inputs[MAX_INPUTS];
-    struct DataDesc outputs[MAX_INPUTS];
+    struct DataDesc outputs[MAX_OUTPUTS];
 
     int (*setup)(struct Node* node);
     int (*process)(struct Node* node);
