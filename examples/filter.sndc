@@ -1,0 +1,20 @@
+wave: osc {
+    function: "saw";
+    duration: 10;
+    freq: 440;
+}
+
+lfo: osc {
+    function: "sin";
+    duration: 1;
+    freq: 1;
+
+    amplitude: 1500;
+    a_offset: 1000;
+}
+
+f: filter {
+    input: wave.out;
+    lfcutoff: lfo.out;
+    hfcutoff: 0;
+}

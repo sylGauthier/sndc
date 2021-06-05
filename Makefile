@@ -1,5 +1,6 @@
-CFLAGS ?= -std=c89 -pedantic -march=native -Wall -Wno-unused-function -O3
-LDLIBS += -lm
+DEBUG := 1
+
+CFLAGS ?= -std=c89 -pedantic -march=native -Wall -Wno-unused-function $(if $(DEBUG),-g -DDEBUG,-O3)
 LDFLAGS += -lm
 
 OBJECTS := $(patsubst %.c,%.o,$(wildcard src/*.c src/modules/*.c))
