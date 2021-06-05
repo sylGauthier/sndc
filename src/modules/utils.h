@@ -15,5 +15,9 @@ int data_string_valid(struct Data* data, const char* strings[],
 
 float interp(struct Buffer* buf, float t);
 float interpf(int type, float a, float b, float t);
+float convol(struct Buffer* buf,
+             struct Buffer* fun,
+             unsigned int maskWidth,
+             unsigned int pos);
 
 #endif

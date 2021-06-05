@@ -96,3 +96,26 @@ float interpf(int type, float a, float b, float t) {
     }
     return 0;
 }
+
+float convol(struct Buffer* buf,
+             struct Buffer* fun,
+             unsigned int maskWidth,
+             unsigned int pos) {
+    unsigned int i1, i2, i;
+    float res = 0, f, sum = 0;
+
+    if (pos < maskWidth / 2) i1 = 0;
+    else i1 = pos - maskWidth / 2;
+
+    if (pos + maskWidth / 2 >= buf->size) i2 = buf->size - 1;
+    else i2 = pos + maskWidth / 2;
+
+    for (i = i1; i <= i2; i++) {
+        float t = ((float) i - (float) pos) / (float) maskWidth + 0.5;
+        f = interp(fun, t);
+        res += buf->data[i] * f;
+        sum += f;
+    }
+    res /= sum;
+    return res;
+}
