@@ -39,20 +39,6 @@ const struct Module osc = {
     NULL
 };
 
-const char* funcNames[] = {
-    "sin",
-    "square",
-    "saw",
-    NULL
-};
-
-const char* interpNames[] = {
-    "step",
-    "linear",
-    "sine",
-    NULL
-};
-
 enum OscInputType {
     FUN, /* wave function */
     FRQ, /* frequency */
@@ -66,20 +52,23 @@ enum OscInputType {
     NUM_INPUTS
 };
 
+static const char* funcNames[] = {
+    "sin",
+    "square",
+    "saw",
+    NULL
+};
+
+enum FuncType {
+    SIN,
+    SQUARE,
+    SAW
+};
+
 static int osc_setup(struct Node* n) {
-    unsigned int i;
     struct Buffer* out;
 
-    if (NUM_INPUTS > MAX_INPUTS) {
-        fprintf(stderr, "Error: %s: NUM_INPUTS (%d) exceeds MAX_INPUTS (%d)\n",
-                        osc.name, NUM_INPUTS, MAX_INPUTS);
-        return 0;
-    }
-    for (i = 0; i < NUM_INPUTS; i++) {
-        if (!data_valid(n->inputs[i], osc.inputs + i, n->name)) {
-            return 0;
-        }
-    }
+    GENERIC_CHECK_INPUTS(n, osc);
 
     if (       !data_string_valid(n->inputs[FUN],
                                   funcNames,
@@ -150,7 +139,6 @@ static void make_square(float* buf, unsigned int size, float param) {
 static int osc_process(struct Node* n) {
     struct Data* out = n->outputs[OUT];
     float f, s, d, t, amp, aoff, param, *data, wave[RES];
-    const char* fun;
     unsigned int i, size;
     struct Buffer bwave;
 
@@ -159,7 +147,6 @@ static int osc_process(struct Node* n) {
     bwave.interp = INTERP_LINEAR;
 
     d = n->inputs[DUR]->content.f;
-    fun = n->inputs[FUN]->content.str;
     if (n->inputs[SPL]) {
         s = n->inputs[SPL]->content.f;
     } else {
@@ -176,14 +163,19 @@ static int osc_process(struct Node* n) {
     if (!(data = malloc(size * sizeof(float)))) {
         return 0;
     }
-    if (!strcmp(fun, "sin")) {
-        make_sin(wave, RES);
-    } else if (!strcmp(fun, "saw")) {
-        make_saw(wave, RES, param);
-    } else if (!strcmp(fun, "square")) {
-        make_square(wave, RES, param);
-    } else {
-        return 0;
+
+    switch (data_which_string(n->inputs[FUN], funcNames)) {
+        case SIN:
+            make_sin(wave, RES);
+            break;
+        case SQUARE:
+            make_square(wave, RES, param);
+            break;
+        case SAW:
+            make_saw(wave, RES, param);
+            break;
+        default:
+            return 0;
     }
 
     t = data_float(n->inputs[POF], 0, 0);

@@ -3,6 +3,13 @@
 
 #include "utils.h"
 
+const char* interpNames[] = {
+    "step",
+    "linear",
+    "sine",
+    NULL
+};
+
 int data_valid(struct Data* data,
                const struct DataDesc* desc,
                const char* ctx) {
@@ -34,18 +41,29 @@ int data_parse_interp(struct Data* data) {
     return -1;
 }
 
+int data_which_string(struct Data* data, const char* strings[]) {
+    unsigned int i;
+
+    for (i = 0; strings[i]; i++) {
+        if (!strcmp(data->content.str, strings[i])) return i;
+    }
+    return -1;
+}
+
 int data_string_valid(struct Data* data, const char* strings[],
                       const char* inputName, const char* nodeName) {
     unsigned int i;
 
-    if (data->type != DATA_STRING || !data->content.str) {
+    if (!data || data->type != DATA_STRING || !data->content.str) {
         fprintf(stderr, "Error: %s: %s must be a string\n",
                         nodeName, inputName);
         return 0;
     }
-    for (i = 0; strings[i]; i++) {
-        if (!strcmp(data->content.str, strings[i])) return 1;
+
+    if (data_which_string(data, strings) >= 0) {
+        return 1;
     }
+
     fprintf(stderr, "Error: %s: %s must be one of:\n", nodeName, inputName);
     for (i = 0; strings[i]; i++) fprintf(stderr, "%s ", strings[i]);
     fprintf(stderr, "\n");
