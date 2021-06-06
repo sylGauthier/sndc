@@ -89,8 +89,12 @@ float interp(struct Buffer* buf, float t) {
 
     f = floor(a);
     r = a - f;
-    i1 = (unsigned int) f % buf->size;;
-    i2 = (i1 + 1) % buf->size;
+    i1 = (unsigned int) f;
+    i2 = (i1 + 1);
+    if (i1 >= buf->size || i2 >= buf->size) {
+        i1 = buf->size - 2;
+        i2 = buf->size - 1;
+    }
     switch (buf->interp) {
         case INTERP_STEP:
             return buf->data[i1];

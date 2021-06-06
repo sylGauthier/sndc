@@ -89,7 +89,7 @@ static void make_exp(struct Buffer* buf, float params[]) {
     float t = 0;
 
     for (i = 0; i < buf->size; i++) {
-        buf->data[i] = expf((t + params[0]) * params[1]);
+        buf->data[i] = params[0] * expf((t + params[1]) * params[2]);
         t += dt;
     }
 }
@@ -97,7 +97,7 @@ static void make_exp(struct Buffer* buf, float params[]) {
 static void make_lin(struct Buffer* buf, float params[]) {
     unsigned int i;
     float dt = 1. / (float) buf->samplingRate;
-    float t = 0, duration = (float) buf->samplingRate * (float) buf->size;
+    float t = 0, duration = (float) buf->size / (float) buf->samplingRate;
     float a = (params[1] - params[0]) / duration;
     float b = params[0];
 
@@ -113,7 +113,7 @@ static void make_inv(struct Buffer* buf, float params[]) {
     float t = 0;
 
     for (i = 0; i < buf->size; i++) {
-        buf->data[i] = 1. / (t + params[0]);
+        buf->data[i] = params[0] / (t + params[1]);
         t += dt;
     }
 }
@@ -127,8 +127,9 @@ static int func_process(struct Node* n) {
     }
     switch (data_which_string(n->inputs[FUN], funcNames)) {
         case EXP:
-            params[0] = data_float(n->inputs[PM0], 0, 0);
-            params[1] = data_float(n->inputs[PM1], 0, -1);
+            params[0] = data_float(n->inputs[PM0], 0, 1);
+            params[1] = data_float(n->inputs[PM1], 0, 0);
+            params[2] = data_float(n->inputs[PM2], 0, -1);
             make_exp(out, params);
             return 1;
         case LIN:
@@ -138,6 +139,7 @@ static int func_process(struct Node* n) {
             return 1;
         case INV:
             params[0] = data_float(n->inputs[PM0], 0, 1);
+            params[1] = data_float(n->inputs[PM1], 0, 1);
             make_inv(out, params);
             return 1;
         default:
