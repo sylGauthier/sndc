@@ -6,6 +6,7 @@ extern const struct Module noise;
 extern const struct Module filter;
 extern const struct Module add;
 extern const struct Module mul;
+extern const struct Module func;
 
 const struct Module* modules[] = {
     &osc,
@@ -16,5 +17,6 @@ const struct Module* modules[] = {
     &filter,
     &add,
     &mul,
+    &func,
     NULL
 };
