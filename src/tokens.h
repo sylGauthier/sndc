@@ -22,6 +22,7 @@ enum Token {
     COLON,
     SEMICOLON,
     DOT,
+    MINUS,
 
     /* Literals */
     DEC_LIT,

@@ -31,6 +31,7 @@ ident           {letter}({letter}|{digit})*
 ":"                  { return COLON;        }
 ";"                  { return SEMICOLON;    }
 "."                  { return DOT;          }
+"-"                  { return MINUS;        }
 
 {declit}?\.{declit}((e|E)(\+|\-)?{declit})? { dblVal = strtod(yytext, NULL);
                                               return FLOAT_LIT;    }

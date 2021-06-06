@@ -11,12 +11,37 @@ enum ParseError {
     ERR_OTHER
 };
 
-static void invalid_token(int token) {
+static const char* tokenNames[] = {
+    "EOF",
+
+    "'{'",
+    "'}'",
+    "':'",
+    "';'",
+    "'.'",
+    "'-'",
+
+    "decimal literal",
+    "hex literal",
+    "octal literal",
+    "binary literal",
+    "float literal",
+    "string",
+
+    "ident",
+    "unknown"
+};
+
+static void invalid_token(int token, int expect) {
     if (token == END) {
         fprintf(stderr, "Error: unexpected end of file\n");
     } else {
-        fprintf(stderr, "Error: line %d: invalid token: %d\n",
-                        yylineno, token);
+        fprintf(stderr, "Error: line %d: invalid token: %s",
+                        yylineno, tokenNames[token]);
+        if (expect != UNKNOWN) {
+            fprintf(stderr, " (expected %s)", tokenNames[expect]);
+        }
+        fprintf(stderr, "\n");
     }
 }
 
@@ -47,6 +72,13 @@ static int parse_data(struct Stack* s,
                 ok = 1;
             }
             break;
+        case MINUS:
+            if ((token = yylex()) != FLOAT_LIT) {
+                invalid_token(token, FLOAT_LIT);
+                fprintf(stderr, "Note: only floats can be negative\n");
+                break;
+            }
+            dblVal *= -1;
         case FLOAT_LIT:
             if ((*data = stack_data_new(s))) {
                 (*data)->type = DATA_FLOAT;
@@ -74,9 +106,9 @@ static int parse_data(struct Stack* s,
                                 "node %s is an unknown module\n",
                                 yylineno, ref->name);
             } else if ((token = yylex()) != DOT) {
-                invalid_token(token);
+                invalid_token(token, DOT);
             } else if ((token = yylex()) != IDENT) {
-                invalid_token(token);
+                invalid_token(token, IDENT);
             } else if ((slot = module_get_output_slot(m, strVal)) < 0) {
                 fprintf(stderr, "Error: line %d: "
                                 "node %s has no output named '%s'\n",
@@ -87,12 +119,12 @@ static int parse_data(struct Stack* s,
             }
             break;
         default:
-            invalid_token(token);
+            invalid_token(token, UNKNOWN);
             return 0;
     }
     if (!ok) return 0;
     if ((token = yylex()) != SEMICOLON) {
-        invalid_token(token);
+        invalid_token(token, SEMICOLON);
         return 0;
     }
     return 1;
@@ -110,7 +142,7 @@ static int parse_input(struct Stack* s,
         if (token == CBRACE) {
             return 0;
         }
-        invalid_token(token);
+        invalid_token(token, IDENT);
         *err = ERR_TOKEN;
     } else if ((slot = module_get_input_slot(m, strVal)) < 0) {
         fprintf(stderr, "Error: line %d: module %s has no input '%s'\n",
@@ -120,7 +152,7 @@ static int parse_input(struct Stack* s,
         fprintf(stderr, "Error: line %d: input slot is not empty\n", yylineno);
         *err = ERR_OTHER;
     } else if ((token = yylex()) != COLON) {
-        invalid_token(token);
+        invalid_token(token, COLON);
         *err = ERR_TOKEN;
     } else if (!parse_data(s, n, &data)) {
         *err = ERR_OTHER;
@@ -141,7 +173,7 @@ static int parse_node(struct Stack* s, int* err) {
         *err = ERR_EOF;
         return 0;
     } else if (token != IDENT) {
-        invalid_token(token);
+        invalid_token(token, IDENT);
         *err = ERR_TOKEN;
     } else if (stack_get_node(s, strVal)) {
         fprintf(stderr, "Error: line %d: redefinition of node %s\n",
@@ -150,17 +182,17 @@ static int parse_node(struct Stack* s, int* err) {
     } else if (!(name = str_cpy(strVal))) {
         *err = ERR_OTHER;
     } else if ((token = yylex()) != COLON) {
-        invalid_token(token);
+        invalid_token(token, COLON);
         *err = ERR_TOKEN;
     } else if ((token = yylex()) != IDENT) {
-        invalid_token(token);
+        invalid_token(token, IDENT);
         *err = ERR_TOKEN;
     } else if (!(module = module_find(strVal))) {
         fprintf(stderr, "Error: line %d: unknown module: %s\n",
                         yylineno, strVal);
         *err = ERR_OTHER;
     } else if ((token = yylex()) != OBRACE) {
-        invalid_token(token);
+        invalid_token(token, OBRACE);
         *err = ERR_TOKEN;
     } else if (!(node = stack_node_new_from_module(s, name, module))) {
         *err = ERR_OTHER;
