@@ -16,7 +16,8 @@ const struct Module env = {
         {"input",       DATA_BUFFER,    REQUIRED},
         {"attack",      DATA_FLOAT,     REQUIRED},
         {"sustain",     DATA_FLOAT,     REQUIRED},
-        {"decay",       DATA_FLOAT,     REQUIRED}
+        {"decay",       DATA_FLOAT,     REQUIRED},
+        {"interp",      DATA_STRING,    OPTIONAL}
     },
     {
         {"out",         DATA_BUFFER,    REQUIRED}
@@ -31,6 +32,7 @@ enum EnvInputType {
     ATK,
     SUS,
     DEC,
+    ITP,
     NUM_INPUTS
 };
 
@@ -42,6 +44,10 @@ static int env_setup(struct Node* n) {
         if (!data_valid(n->inputs[i], env.inputs + i, n->name)) {
             return 0;
         }
+    }
+    if (n->inputs[ITP] && data_parse_interp(n->inputs[ITP]) < 0) {
+        fprintf(stderr, "Error: %s: invalid interp\n", n->name);
+        return 0;
     }
 
     in = n->inputs[INP];
@@ -56,6 +62,7 @@ static int env_process(struct Node* n) {
     struct Buffer *in, *out;
     unsigned int i, susi, deci, flati;
     float atkt, sust, dect;
+    int interp;
 
     in = &n->inputs[INP]->content.buf;
     out = &n->outputs[0]->content.buf;
@@ -72,11 +79,16 @@ static int env_process(struct Node* n) {
     deci = deci > in->size ? in->size : deci;
     flati = flati > in->size ? in->size : flati;
 
+    if (!n->inputs[ITP]) {
+        interp = INTERP_LINEAR;
+    } else if ((interp = data_parse_interp(n->inputs[ITP])) < 0) {
+        return 0;
+    }
     if (!(out->data = malloc(out->size * sizeof(float)))) {
         return 0;
     }
     for (i = 0; i < susi; i++) {
-        out->data[i] = interpf(INTERP_SINE,
+        out->data[i] = interpf(interp,
                                0, 1, (float) i / (float) susi) * in->data[i];
     }
     for (i = susi; i < deci; i++) {
@@ -84,7 +96,7 @@ static int env_process(struct Node* n) {
     }
     for (i = deci; i < flati; i++) {
         out->data[i] =
-            interpf(INTERP_SINE, 1, 0,
+            interpf(interp, 1, 0,
                     (float) (i - deci) / (float) (flati - deci)) * in->data[i];
     }
     for (i = flati; i < out->size; i++) {
