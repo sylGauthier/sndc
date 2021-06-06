@@ -1,0 +1,64 @@
+amp: func {
+    function: "exp";
+    duration: 1;
+    sampling: 100;
+
+    param0: 1;
+    param2: -50.;
+}
+
+freq: func {
+    function: "lin";
+    duration: 1;
+    param0: 200;
+    param1: -500.;
+}
+
+wav: osc {
+    function: "saw";
+    freq: freq.out;
+    duration: 0.5;
+    amplitude: amp.out;
+}
+
+noise: noise {
+    duration: 1;
+}
+
+fenv: func {
+    function: "exp";
+    duration: 1;
+    sampling: 10;
+
+    param0: 10000;
+    param2: -2.;
+}
+
+p: print {
+    input: fenv.out;
+    file: "data";
+}
+
+f: filter {
+    input: noise.out;
+    lfcutoff: 1000;
+    hfcutoff: fenv.out;
+}
+
+amp2: func {
+    function: "exp";
+    duration: 1;
+    sampling: 100;
+    param0: 0.5;
+    param2: -30.;
+}
+
+envnoise: mul {
+    input0: f.out;
+    input1: amp2.out;
+}
+
+mix: mix {
+    input0: wav.out;
+    input1: envnoise.out;
+}

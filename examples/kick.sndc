@@ -1,29 +1,37 @@
-lin: osc {
-    function: "sin";
-    freq: 1;
-    duration: 0.25;
-    sampling: 10;
+freq: func {
+    function: "exp";
+    duration: 1;
+    sampling: 100;
 
-    amplitude: 250;
-    a_offset: 120;
-    p_offset: 0.5;
-}
-
-pr: print {
-    input: lin.out;
-    file: "out";
+    param0: 180;
+    param2: -3.;
 }
 
 wav: osc {
-    function: "sin";
-    freq: lin.out;
-    duration: 1;
+    function: "square";
+    freq: freq.out;
+    duration: 0.5;
     amplitude: 1;
 }
 
-env: envelop {
+fenv: func {
+    function: "exp";
+    duration: 1;
+    sampling: 10;
+
+    param0: 1000;
+    param2: -2.;
+}
+
+f: filter {
     input: wav.out;
-    attack: 0.02;
+    lfcutoff: 0;
+    hfcutoff: fenv.out;
+}
+
+env: envelop {
+    input: f.out;
+    attack: 0.01;
     sustain: 0;
     decay: 0.3;
 }
