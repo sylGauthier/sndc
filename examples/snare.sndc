@@ -1,3 +1,4 @@
+/* Timber */
 amp: func {
     function: "exp";
     duration: 1;
@@ -7,20 +8,44 @@ amp: func {
     param2: -50.;
 }
 
-freq: func {
-    function: "lin";
-    duration: 1;
-    param0: 200;
-    param1: -500.;
-}
-
-wav: osc {
-    function: "saw";
-    freq: freq.out;
+wav0: osc {
+    function: "sin";
+    freq: 180;
     duration: 0.5;
     amplitude: amp.out;
 }
 
+wav1: osc {
+    function: "saw";
+    freq: 286;
+    duration: 0.5;
+    amplitude: amp.out;
+}
+
+wav2: osc {
+    function: "saw";
+    freq: 335;
+    duration: 0.5;
+    amplitude: amp.out;
+}
+
+wav3: osc {
+    function: "sin";
+    freq: 330;
+    duration: 0.5;
+    amplitude: amp.out;
+}
+
+timber: mix {
+    input0: wav0.out;
+    input1: wav1.out;
+    input2: wav2.out;
+    input3: wav3.out;
+}
+
+
+
+/* Cable */
 noise: noise {
     duration: 1;
 }
@@ -53,7 +78,10 @@ envnoise: mul {
     input1: amp2.out;
 }
 
+
+
+/* Mixed output */
 mix: mix {
-    input0: wav.out;
+    input0: timber.out;
     input1: envnoise.out;
 }
