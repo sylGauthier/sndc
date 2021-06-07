@@ -60,7 +60,6 @@ static int mix_process(struct Node* n) {
     struct Data* out = n->outputs[OUT];
     float* bufs[4] = {NULL};
     float* res;
-    float maxval = 0;
     unsigned int sizes[4] = {0}, sr[4] = {0}, i, numInput = 2;
     unsigned int maxSize = 0;
 
@@ -99,10 +98,6 @@ static int mix_process(struct Node* n) {
         if (i < sizes[1]) res[i] += bufs[1][i];
         if (i < sizes[2]) res[i] += bufs[2][i];
         if (i < sizes[3]) res[i] += bufs[3][i];
-        if (fabs(res[i]) > maxval) maxval = fabs(res[i]);
-    }
-    for (i = 0; i < maxSize; i++) {
-        res[i] /= maxval;
     }
     out->type = DATA_BUFFER;
     out->content.buf.data = res;

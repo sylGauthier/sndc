@@ -34,11 +34,6 @@ fenv: func {
     param2: -2.;
 }
 
-p: print {
-    input: fenv.out;
-    file: "data";
-}
-
 f: filter {
     input: noise.out;
     lfcutoff: 1000;
