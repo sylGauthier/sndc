@@ -48,7 +48,7 @@ static int mul_process(struct Node* n) {
     out = n->outputs[0];
 
     if (in0->type == DATA_FLOAT) {
-        out->content.f = in0->content.f + in1->content.f;
+        out->content.f = in0->content.f * in1->content.f;
         return 1;
     }
     if (!(out->content.buf.data = malloc(out->content.buf.size
