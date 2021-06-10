@@ -47,6 +47,10 @@ ident           {letter}({letter}|{digit})*
                                               return BIN_LIT;      }
 \"(?:[^"\\]|\\.)*\"                         { return STRING_LIT;      }
 
+"import"                                    { return IMPORT; }
+"export"                                    { return EXPORT; }
+"as"                                        { return AS; }
+
 {ident}              { if (strlen(yytext) >= MAX_IDENT)
                            fprintf(stderr, "Warning: ident length %s exceeds MAX_IDENT (%d), truncating\n",
                                            yytext, MAX_IDENT);

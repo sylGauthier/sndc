@@ -3,6 +3,7 @@
 
 #include "sndc.h"
 #include "tokens.h"
+#include "parser.h"
 
 enum ParseError {
     ERR_NO,
@@ -45,7 +46,7 @@ static void invalid_token(int token, int expect) {
     }
 }
 
-static char* str_cpy(const char* s) {
+char* str_cpy(const char* s) {
     char* res;
 
     if ((res = malloc(strlen(s) + 1))) {
@@ -54,23 +55,46 @@ static char* str_cpy(const char* s) {
     return res;
 }
 
-static int parse_data(struct Stack* s,
-                      struct Node* n,
-                      struct Data** data) {
-    int token, slot, ok = 0;
-    struct Node* ref;
-    const struct Module* m;
+static int get_node(const struct SNDCFile* f, const char* name) {
+    int i = 0;
+
+    for (i = 0; i < f->numEntries; i++) {
+        if (!strcmp(f->entries[i].name, name)) {
+            return i;
+        }
+    }
+    return -1;
+}
+
+#define NEW_ELEM_FUNC(n, t1, t2, a, c, m) \
+static struct t2* new_##n(struct t1* container) { \
+    struct t2* res = NULL; \
+    if (container->c < m) { \
+        res = container->a + (container->c ++); \
+    } \
+    return res; \
+}
+
+NEW_ELEM_FUNC(field, Entry, Field, fields, numFields, MAX_FIELDS)
+
+NEW_ELEM_FUNC(import, SNDCFile, Import, imports, numImport, MAX_IMPORT)
+NEW_ELEM_FUNC(export, SNDCFile, Export, exports, numExport, MAX_EXPORT)
+NEW_ELEM_FUNC(entry, SNDCFile, Entry, entries, numEntries, MAX_ENTRIES)
+
+
+static int parse_data(struct SNDCFile* f,
+                      struct Entry* n,
+                      struct Field* field) {
+    int token, ok = 0;
 
     switch ((token = yylex())) {
         case DEC_LIT:
         case HEX_LIT:
         case OCT_LIT:
         case BIN_LIT:
-            if ((*data = stack_data_new(s))) {
-                (*data)->type = DATA_FLOAT;
-                (*data)->content.f = intVal;
-                ok = 1;
-            }
+            field->type = FIELD_FLOAT;
+            field->data.f = intVal;
+            ok = 1;
             break;
         case MINUS:
             if ((token = yylex()) != FLOAT_LIT) {
@@ -80,41 +104,28 @@ static int parse_data(struct Stack* s,
             }
             dblVal *= -1;
         case FLOAT_LIT:
-            if ((*data = stack_data_new(s))) {
-                (*data)->type = DATA_FLOAT;
-                (*data)->content.f = dblVal;
-                ok = 1;
-            }
+            field->type = FIELD_FLOAT;
+            field->data.f = dblVal;
+            ok = 1;
             break;
         case STRING_LIT:
-            if ((       *data = stack_data_new(s))
-                    && ((*data)->content.str = str_cpy(yytext + 1))) {
-                (*data)->type = DATA_STRING;
-                (*data)->content.str[strlen((*data)->content.str) - 1] = '\0';
+            if ((field->data.str = str_cpy(yytext + 1))) {
+                field->type = FIELD_STRING;
+                field->data.str[strlen(field->data.str) - 1] = '\0';
                 ok = 1;
             }
             break;
         case IDENT:
-            if (!(ref = stack_get_node(s, strVal))) {
-                fprintf(stderr, "Error: line %d: node %s not defined\n",
-                                yylineno, strVal);
-            } else if (ref == n) {
-                fprintf(stderr, "Error: line %d: node can't link to itself\n",
-                                yylineno);
-            } else if (!(m = module_find(ref->module))) {
-                fprintf(stderr, "Error: line %d: "
-                                "node %s is an unknown module\n",
-                                yylineno, ref->name);
+            field->type = FIELD_REF;
+            if (!(field->data.ref.name = str_cpy(strVal))) {
+                fprintf(stderr, "Error: parse_data: can't alloc string\n");
             } else if ((token = yylex()) != DOT) {
                 invalid_token(token, DOT);
             } else if ((token = yylex()) != IDENT) {
                 invalid_token(token, IDENT);
-            } else if ((slot = module_get_output_slot(m, strVal)) < 0) {
-                fprintf(stderr, "Error: line %d: "
-                                "node %s has no output named '%s'\n",
-                                yylineno, ref->name, strVal);
+            } else if (!(field->data.ref.field = str_cpy(strVal))) {
+                fprintf(stderr, "Error: parse_data: can't alloc string\n");
             } else {
-                *data = ref->outputs[slot];
                 ok = 1;
             }
             break;
@@ -130,12 +141,11 @@ static int parse_data(struct Stack* s,
     return 1;
 }
 
-static int parse_input(struct Stack* s,
-                       struct Node* n,
-                       const struct Module* m,
+static int parse_field(struct SNDCFile* f,
+                       struct Entry* n,
                        int* err) {
-    int token, slot;
-    struct Data* data;
+    int token;
+    struct Field* field = NULL;
 
     *err = ERR_NO;
     if ((token = yylex()) != IDENT) {
@@ -144,38 +154,28 @@ static int parse_input(struct Stack* s,
         }
         invalid_token(token, IDENT);
         *err = ERR_TOKEN;
-    } else if ((slot = module_get_input_slot(m, strVal)) < 0) {
-        fprintf(stderr, "Error: line %d: module %s has no input '%s'\n",
-                        yylineno, m->name, strVal);
+    } else if (!(field = new_field(n))) {
         *err = ERR_OTHER;
-    } else if (n->inputs[slot]) {
-        fprintf(stderr, "Error: line %d: input slot is not empty\n", yylineno);
+    } else if (!(field->name = str_cpy(strVal))) {
         *err = ERR_OTHER;
     } else if ((token = yylex()) != COLON) {
         invalid_token(token, COLON);
         *err = ERR_TOKEN;
-    } else if (!parse_data(s, n, &data)) {
+    } else if (!parse_data(f, n, field)) {
         *err = ERR_OTHER;
-    } else {
-        n->inputs[slot] = data;
+    }
+    if (*err != ERR_NO && field) {
+        n->numFields--;
     }
     return *err == ERR_NO;
 }
 
-static int parse_node(struct Stack* s, int* err) {
-    char* name = NULL;
-    const struct Module* module;
-    struct Node* node;
+static int parse_node(struct SNDCFile* f, int* err) {
+    char *name = NULL, *type = NULL;
+    struct Entry* node;
     int token;
 
-    token = yylex();
-    if (token == END) {
-        *err = ERR_EOF;
-        return 0;
-    } else if (token != IDENT) {
-        invalid_token(token, IDENT);
-        *err = ERR_TOKEN;
-    } else if (stack_get_node(s, strVal)) {
+    if (get_node(f, strVal) >= 0) {
         fprintf(stderr, "Error: line %d: redefinition of node %s\n",
                         yylineno, strVal);
         *err = ERR_OTHER;
@@ -187,53 +187,151 @@ static int parse_node(struct Stack* s, int* err) {
     } else if ((token = yylex()) != IDENT) {
         invalid_token(token, IDENT);
         *err = ERR_TOKEN;
-    } else if (!(module = module_find(strVal))) {
-        fprintf(stderr, "Error: line %d: unknown module: %s\n",
-                        yylineno, strVal);
+    } else if (!(type = str_cpy(strVal))) {
         *err = ERR_OTHER;
     } else if ((token = yylex()) != OBRACE) {
         invalid_token(token, OBRACE);
         *err = ERR_TOKEN;
-    } else if (!(node = stack_node_new_from_module(s, name, module))) {
+    } else if (!(node = new_entry(f))) {
         *err = ERR_OTHER;
     } else {
-        unsigned int nd = s->numData;
-
-        while (parse_input(s, node, module, err));
+        node->name = name;
+        node->type = type;
+        while (parse_field(f, node, err));
         switch (*err) {
             case ERR_NO:
-                if (!node->setup(node)) {
-                    fprintf(stderr, "Error: node setup failed for %s\n",
-                                    node->name);
-                    s->numNodes--;
-                    *err = ERR_OTHER;
-                } else {
-                    return 1;
-                }
-                break;
+                return 1;
             default:
-                s->numNodes--;
-                s->numData = nd;
+                f->numEntries--;
                 break;
         }
     }
     free(name);
+    free(type);
     return 0;
 }
 
-int stack_load(struct Stack* stack, FILE* in) {
-    int err;
+static int parse_import(struct SNDCFile* f, int* err) {
+    int token;
+
+    if ((token = yylex()) != STRING_LIT) {
+        invalid_token(token, STRING_LIT);
+        *err = ERR_TOKEN;
+    } else if ((token = yylex()) != AS) {
+        invalid_token(token, AS);
+        *err = ERR_TOKEN;
+    } else if ((token = yylex()) != IDENT) {
+        invalid_token(token, IDENT);
+        *err = ERR_TOKEN;
+    } else if ((token = yylex()) != SEMICOLON) {
+        invalid_token(token, SEMICOLON);
+        *err = ERR_TOKEN;
+    } else {
+        return 1;
+    }
+    return 0;
+}
+
+static int parse_export(struct SNDCFile* f, int* err) {
+    int token;
+
+    if ((token = yylex()) != IDENT) {
+        invalid_token(token, IDENT);
+        *err = ERR_TOKEN;
+    } else if ((token = yylex()) != DOT) {
+        invalid_token(token, DOT);
+        *err = ERR_TOKEN;
+    } else if ((token = yylex()) != IDENT) {
+        invalid_token(token, IDENT);
+        *err = ERR_TOKEN;
+    } else if ((token = yylex()) != AS) {
+        invalid_token(token, AS);
+        *err = ERR_TOKEN;
+    } else if ((token = yylex()) != IDENT) {
+        invalid_token(token, IDENT);
+        *err = ERR_TOKEN;
+    } else if ((token = yylex()) != SEMICOLON) {
+        invalid_token(token, SEMICOLON);
+        *err = ERR_TOKEN;
+    } else {
+        return 1;
+    }
+    return 0;
+}
+
+int parse_sndc(struct SNDCFile* file, FILE* in) {
+    int err, token, ok = 1;
 
     yyin = in;
-    while (parse_node(stack, &err));
+    memset(file, 0, sizeof(struct SNDCFile));
+    while (ok && (token = yylex())) {
+        switch (token) {
+            case IDENT:
+                if (!parse_node(file, &err)) {
+                    ok = 0;
+                }
+                break;
+            case IMPORT:
+                if (!parse_import(file, &err)) {
+                    ok = 0;
+                }
+                break;
+            case EXPORT:
+                if (!parse_export(file, &err)) {
+                    ok = 0;
+                }
+                break;
+            default:
+                invalid_token(token, UNKNOWN);
+                break;
+        }
+    }
+    if (token == END) err = ERR_NO;
     yylex_destroy();
     switch (err) {
         case ERR_NO:
         case ERR_EOF:
             return 1;
         default:
-            fprintf(stderr, "Error: node parsing failed with error %d\n", err);
+            fprintf(stderr, "Error: file parsing failed with error %d\n", err);
             return 0;
     }
     return 0;
+}
+
+void free_sndc(struct SNDCFile* file) {
+    unsigned int i;
+
+    for (i = 0; i < file->numImport; i++) {
+        free(file->imports[i].fileName);
+        free(file->imports[i].importName);
+    }
+
+    for (i = 0; i < file->numExport; i++) {
+        free(file->exports[i].symbol);
+        free(file->exports[i].ref.name);
+        free(file->exports[i].ref.field);
+    }
+
+    for (i = 0; i < file->numEntries; i++) {
+        unsigned int j;
+
+        free(file->entries[i].name);
+        free(file->entries[i].type);
+        for (j = 0; j < file->entries[i].numFields; j++) {
+            struct Field* f = &file->entries[i].fields[j];
+            free(f->name);
+            switch (f->type) {
+                case FIELD_STRING:
+                    free(f->data.str);
+                    break;
+                case FIELD_REF:
+                    free(f->data.ref.name);
+                    free(f->data.ref.field);
+                    break;
+                default:
+                    break;
+            }
+        }
+    }
 }

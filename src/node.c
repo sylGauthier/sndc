@@ -3,6 +3,7 @@
 #include <stdio.h>
 
 #include "sndc.h"
+#include "parser.h"
 
 void node_init(struct Node* node) {
     unsigned int i;
@@ -64,8 +65,11 @@ struct Node* stack_node_new_from_module(struct Stack* stack,
     stack->numNodes++;
 
     node_init(new);
-    new->name = name;
-    new->module = module->name;
+    if (!(new->name = str_cpy(name))) {
+        free(new);
+        return NULL;
+    }
+    new->module = module;
     new->setup = module->setup;
     new->process = module->process;
     new->teardown = module->teardown;
@@ -75,6 +79,8 @@ struct Node* stack_node_new_from_module(struct Stack* stack,
 
             if (!(data = stack_data_new(stack))) {
                 stack->numNodes--;
+                node_free(new);
+                free(new);
                 return NULL;
             }
             new->outputs[i] = data;
@@ -111,6 +117,13 @@ struct Node* stack_get_node(struct Stack* stack, const char* name) {
 }
 
 int stack_valid(struct Stack* stack) {
+    unsigned int i;
+
+    for (i = 0; i < stack->numNodes; i++) {
+        if (!(stack->nodes[i]->setup(stack->nodes[i]))) {
+            return 0;
+        }
+    }
     return 1;
 }
 
@@ -125,4 +138,98 @@ int stack_process(struct Stack* stack) {
         }
     }
     return 1;
+}
+
+static int load_input(struct Stack* stack,
+                      const struct Module* mod,
+                      struct Node* n,
+                      struct Field* f) {
+    int slot;
+
+    if ((slot = module_get_input_slot(mod, f->name)) < 0) {
+        fprintf(stderr, "Error: module %s has no input '%s'\n",
+                mod->name, f->name);
+    } else if (n->inputs[slot]) {
+        fprintf(stderr, "Error: node %s: input %s is not empty\n",
+                n->name, f->name);
+    } else {
+        struct Data* d = NULL;
+        struct Node* r;
+        const struct Module* refmod;
+        int refslot;
+
+        switch (f->type) {
+            case FIELD_FLOAT:
+                if ((d = stack_data_new(stack))) {
+                    d->type = DATA_FLOAT;
+                    d->content.f = f->data.f;
+                    n->inputs[slot] = d;
+                    return 1;
+                }
+                break;
+            case FIELD_STRING:
+                if ((d = stack_data_new(stack))) {
+                    d->type = DATA_STRING;
+                    if ((d->content.str = str_cpy(f->data.str))) {
+                        n->inputs[slot] = d;
+                        return 1;
+                    }
+                }
+                break;
+            case FIELD_REF:
+                if (!(r = stack_get_node(stack, f->data.ref.name))) {
+                    fprintf(stderr, "Error: node %s not defined\n",
+                            f->data.ref.name);
+                } else if (r == n) {
+                    fprintf(stderr, "Error: node %s is refering to itself\n",
+                            n->name);
+                } else if (!(refmod = r->module)) {
+                    fprintf(stderr, "Error: node %s is an unknown module\n",
+                            r->name);
+                } else if ((refslot =
+                            module_get_output_slot(refmod,
+                                                   f->data.ref.field)) < 0) {
+                    fprintf(stderr,
+                            "Error: node %s: node %s has no output named %s\n",
+                            n->name, r->name, f->data.ref.field);
+                } else {
+                    n->inputs[slot] = r->outputs[refslot];
+                    return 1;
+                }
+        }
+        if (d) {
+            data_free(d);
+            stack->numData--;
+        }
+    }
+    return 0;
+}
+
+int stack_load(struct Stack* stack, struct SNDCFile* file) {
+    unsigned int i;
+    int ok = 1;
+
+    for (i = 0; i < file->numEntries && ok; i++) {
+        struct Node* new;
+        const struct Module* mod;
+        struct Entry* e = &file->entries[i];
+
+        if (!(mod = module_find(e->type))) {
+            fprintf(stderr, "Error: %s: no such module\n", e->type);
+            ok = 0;
+        } else if (!(new = stack_node_new_from_module(stack, e->name, mod))) {
+            fprintf(stderr, "Error: can't create new node\n");
+            ok = 0;
+        } else {
+            unsigned int j;
+
+            for (j = 0; j < e->numFields; j++) {
+                if (!(load_input(stack, mod, new, e->fields + j))) {
+                    ok = 0;
+                    break;
+                }
+            }
+        }
+    }
+    return ok;
 }

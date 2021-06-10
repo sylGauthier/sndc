@@ -1,6 +1,7 @@
 #include <string.h>
 
 #include "sndc.h"
+#include "parser.h"
 
 static void list_modules() {
     unsigned int i;
@@ -70,6 +71,7 @@ static int help(int argc, char** argv) {
 
 int main(int argc, char** argv) {
     struct Stack s;
+    struct SNDCFile file = {0};
     FILE *in = NULL, *out = NULL;
     char ok = 0;
 
@@ -100,7 +102,9 @@ int main(int argc, char** argv) {
     }
 
     stack_init(&s);
-    if (!stack_load(&s, in)) {
+    if (!parse_sndc(&file, in)) {
+        fprintf(stderr, "Error: parsing failed\n");
+    } else if (!stack_load(&s, &file)) {
         fprintf(stderr, "Error: loading stack failed\n");
     } else if (!stack_valid(&s)) {
         fprintf(stderr, "Error: stack invalid\n");
@@ -121,6 +125,7 @@ int main(int argc, char** argv) {
         ok = 1;
     }
     stack_free(&s);
+    free_sndc(&file);
     if (in) fclose(in);
     if (out) fclose(out);
 

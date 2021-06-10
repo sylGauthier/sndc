@@ -37,6 +37,8 @@ void data_init(struct Data* data);
 void data_free(struct Data* data);
 
 
+struct Module;
+
 struct Node {
     struct Data* inputs[MAX_INPUTS];
     struct Data* outputs[MAX_OUTPUTS];
@@ -46,7 +48,7 @@ struct Node {
     int (*teardown)(struct Node* node);
 
     const char* name;
-    const char* module;
+    const struct Module* module;
 };
 
 void node_init(struct Node* node);
@@ -68,6 +70,8 @@ struct Module {
     int (*setup)(struct Node* node);
     int (*process)(struct Node* node);
     int (*teardown)(struct Node* node);
+
+    FILE* file;
 };
 
 extern const struct Module* modules[];
@@ -76,12 +80,14 @@ int module_load_all();
 const struct Module* module_find(const char* name);
 int module_get_input_slot(const struct Module* module, const char* name);
 int module_get_output_slot(const struct Module* module, const char* name);
+int module_import(struct Module* module, const char* file);
 
 
 struct Stack {
+    struct Module** imports;
     struct Data** data;
     struct Node** nodes;
-    unsigned int numNodes, numData;
+    unsigned int numNodes, numData, numImports;
 };
 
 void stack_init(struct Stack* stack);
@@ -93,6 +99,8 @@ struct Data* stack_data_new(struct Stack* stack);
 struct Node* stack_get_node(struct Stack* stack, const char* name);
 int stack_valid(struct Stack* stack);
 int stack_process(struct Stack* stack);
-int stack_load(struct Stack* stack, FILE* in);
+
+struct SNDCFile;
+int stack_load(struct Stack* stack, struct SNDCFile* file);
 
 #endif

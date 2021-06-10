@@ -32,6 +32,11 @@ enum Token {
     FLOAT_LIT,
     STRING_LIT,
 
+    /* Keywords */
+    IMPORT,
+    EXPORT,
+    AS,
+
     IDENT,
     UNKNOWN
 };
