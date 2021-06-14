@@ -29,6 +29,10 @@ static const char* tokenNames[] = {
     "float literal",
     "string",
 
+    "import",
+    "export",
+    "as",
+
     "ident",
     "unknown"
 };
@@ -37,7 +41,7 @@ static void invalid_token(int token, int expect) {
     if (token == END) {
         fprintf(stderr, "Error: unexpected end of file\n");
     } else {
-        fprintf(stderr, "Error: line %d: invalid token: %s",
+        fprintf(stderr, "Error: line %d: invalid token: '%s'",
                         yylineno, tokenNames[token]);
         if (expect != UNKNOWN) {
             fprintf(stderr, " (expected %s)", tokenNames[expect]);
