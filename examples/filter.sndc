@@ -14,7 +14,7 @@ lfo: osc {
 }
 
 f: filter {
-    input: wave.out;
+    in: wave.out;
     lfcutoff: lfo.out;
     hfcutoff: 0;
 }

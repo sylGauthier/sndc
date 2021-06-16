@@ -50,6 +50,8 @@ ident           {letter}({letter}|{digit})*
 "import"                                    { return IMPORT; }
 "export"                                    { return EXPORT; }
 "as"                                        { return AS; }
+"input"                                     { return INPUT; }
+"output"                                    { return OUTPUT; }
 
 {ident}              { if (strlen(yytext) >= MAX_IDENT)
                            fprintf(stderr, "Warning: ident length %s exceeds MAX_IDENT (%d), truncating\n",

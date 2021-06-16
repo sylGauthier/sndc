@@ -37,6 +37,10 @@ struct Entry {
 struct Export {
     char* symbol;
     struct Ref ref;
+    enum ExportType {
+        EXP_INPUT,
+        EXP_OUTPUT
+    } type;
 };
 
 struct Import {

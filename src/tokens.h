@@ -36,6 +36,8 @@ enum Token {
     IMPORT,
     EXPORT,
     AS,
+    INPUT,
+    OUTPUT,
 
     IDENT,
     UNKNOWN

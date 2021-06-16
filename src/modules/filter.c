@@ -14,7 +14,7 @@ static int filter_setup(struct Node* n);
 const struct Module filter = {
     "filter", "Apply filter to input signal",
     {
-        {"input",       DATA_BUFFER,                REQUIRED},
+        {"in",          DATA_BUFFER,                REQUIRED},
         {"lfcutoff",    DATA_FLOAT | DATA_BUFFER,   REQUIRED},
         {"hfcutoff",    DATA_FLOAT | DATA_BUFFER,   REQUIRED}
     },

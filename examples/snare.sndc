@@ -1,3 +1,10 @@
+export input amp.param2 as tdecay;
+export input amp2.param2 as cdecay;
+export input fenv.param0 as hfcut;
+export input f.lfcutoff as lfcut;
+
+export output mix.out as out;
+
 /* Timber */
 amp: func {
     function: "exp";
@@ -60,7 +67,7 @@ fenv: func {
 }
 
 f: filter {
-    input: noise.out;
+    in: noise.out;
     lfcutoff: 1000;
     hfcutoff: fenv.out;
 }

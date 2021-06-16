@@ -19,17 +19,21 @@ static void print_module(const struct Module* module) {
         if (module->inputs[i].name) {
             char* sep = "";
             printf("    %s [", module->inputs[i].name);
-            if (module->inputs[i].type & DATA_BUFFER) {
-                printf("%sBUFFER", sep);
-                sep = " | ";
-            }
-            if (module->inputs[i].type & DATA_FLOAT) {
-                printf("%sFLOAT", sep);
-                sep = " | ";
-            }
-            if (module->inputs[i].type & DATA_STRING) {
-                printf("%sSTRING", sep);
-                sep = " | ";
+            if (!module->inputs[i].type) {
+                printf("UNKOWN");
+            } else {
+                if (module->inputs[i].type & DATA_BUFFER) {
+                    printf("%sBUFFER", sep);
+                    sep = " | ";
+                }
+                if (module->inputs[i].type & DATA_FLOAT) {
+                    printf("%sFLOAT", sep);
+                    sep = " | ";
+                }
+                if (module->inputs[i].type & DATA_STRING) {
+                    printf("%sSTRING", sep);
+                    sep = " | ";
+                }
             }
             printf("] [%s]\n", module->inputs[i].req ?
                                "REQUIRED" : "OPTIONAL");
@@ -106,8 +110,6 @@ int main(int argc, char** argv) {
         fprintf(stderr, "Error: parsing failed\n");
     } else if (!stack_load(&s, &file)) {
         fprintf(stderr, "Error: loading stack failed\n");
-    } else if (!stack_valid(&s)) {
-        fprintf(stderr, "Error: stack invalid\n");
     } else if (!stack_process(&s)) {
         fprintf(stderr, "Error: processing stack failed\n");
     } else {

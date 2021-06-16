@@ -32,6 +32,8 @@ static const char* tokenNames[] = {
     "import",
     "export",
     "as",
+    "input",
+    "output",
 
     "ident",
     "unknown"
@@ -75,6 +77,7 @@ static struct t2* new_##n(struct t1* container) { \
     struct t2* res = NULL; \
     if (container->c < m) { \
         res = container->a + (container->c ++); \
+        memset(res, 0, sizeof(*res)); \
     } \
     return res; \
 }
@@ -217,48 +220,75 @@ static int parse_node(struct SNDCFile* f, int* err) {
 
 static int parse_import(struct SNDCFile* f, int* err) {
     int token;
+    struct Import* imp = NULL;
 
-    if ((token = yylex()) != STRING_LIT) {
+    if (!(imp = new_import(f))) {
+        fprintf(stderr, "Error: can't add import, too many imports?\n");
+    } else if ((token = yylex()) != STRING_LIT) {
         invalid_token(token, STRING_LIT);
         *err = ERR_TOKEN;
+    } else if (!(imp->fileName = str_cpy(yytext + 1))) {
+        *err = ERR_OTHER;
     } else if ((token = yylex()) != AS) {
         invalid_token(token, AS);
         *err = ERR_TOKEN;
     } else if ((token = yylex()) != IDENT) {
         invalid_token(token, IDENT);
         *err = ERR_TOKEN;
+    } else if (!(imp->importName = str_cpy(strVal))) {
+        *err = ERR_OTHER;
     } else if ((token = yylex()) != SEMICOLON) {
         invalid_token(token, SEMICOLON);
         *err = ERR_TOKEN;
     } else {
+        imp->fileName[strlen(imp->fileName) - 1] = '\0';
         return 1;
     }
     return 0;
 }
 
 static int parse_export(struct SNDCFile* f, int* err) {
-    int token;
+    int token, type;
+    struct Export* e = NULL;
 
-    if ((token = yylex()) != IDENT) {
+    if (!(e = new_export(f))) {
+        fprintf(stderr, "Error: can't add export field, too many exports?\n");
+    } else if ((token = yylex()) != INPUT && token != OUTPUT) {
+        invalid_token(token, UNKNOWN);
+        *err = ERR_TOKEN;
+    } else if ((type = token, (token = yylex()) != IDENT)) {
         invalid_token(token, IDENT);
         *err = ERR_TOKEN;
+    } else if (!(e->ref.name = str_cpy(strVal))) {
+        *err = ERR_OTHER;
     } else if ((token = yylex()) != DOT) {
         invalid_token(token, DOT);
         *err = ERR_TOKEN;
     } else if ((token = yylex()) != IDENT) {
         invalid_token(token, IDENT);
         *err = ERR_TOKEN;
+    } else if (!(e->ref.field = str_cpy(strVal))) {
+        *err = ERR_OTHER;
     } else if ((token = yylex()) != AS) {
         invalid_token(token, AS);
         *err = ERR_TOKEN;
     } else if ((token = yylex()) != IDENT) {
         invalid_token(token, IDENT);
         *err = ERR_TOKEN;
+    } else if (!(e->symbol = str_cpy(strVal))) {
+        *err = ERR_OTHER;
     } else if ((token = yylex()) != SEMICOLON) {
         invalid_token(token, SEMICOLON);
         *err = ERR_TOKEN;
     } else {
+        e->type = type == INPUT ? EXP_INPUT : EXP_OUTPUT;
         return 1;
+    }
+    if (e) {
+        free(e->symbol);
+        free(e->ref.name);
+        free(e->ref.field);
+        f->numExport--;
     }
     return 0;
 }

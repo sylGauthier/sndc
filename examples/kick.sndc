@@ -1,3 +1,11 @@
+export input freq.param0 as freq;
+export input freq.param2 as freqdecay;
+export input wav.function as wave;
+export input env.attack as attack;
+export input env.decay as decay;
+
+export output env.out as out;
+
 freq: func {
     function: "exp";
     duration: 1;
@@ -24,13 +32,13 @@ fenv: func {
 }
 
 f: filter {
-    input: wav.out;
+    in: wav.out;
     lfcutoff: 0;
     hfcutoff: fenv.out;
 }
 
 env: envelop {
-    input: f.out;
+    in: f.out;
     attack: 0.01;
     sustain: 0;
     decay: 0.3;

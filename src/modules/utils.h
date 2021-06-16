@@ -3,8 +3,6 @@
 
 #include "../sndc.h"
 
-#define REQUIRED 1
-#define OPTIONAL 0
 #define M_PI 3.14159265358979
 
 #define GENERIC_CHECK_INPUTS(n, m) \

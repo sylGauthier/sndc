@@ -21,6 +21,7 @@ struct Buffer {
 
 struct Data {
     enum DataType {
+        DATA_UNKNOWN    = 0,
         DATA_BUFFER     = 1 << 0,
         DATA_FLOAT      = 1 << 1,
         DATA_STRING     = 1 << 2
@@ -49,6 +50,7 @@ struct Node {
 
     const char* name;
     const struct Module* module;
+    void* data;
 };
 
 void node_init(struct Node* node);
@@ -58,8 +60,13 @@ void node_free(struct Node* node);
 struct DataDesc {
     const char* name;
     int type;
-    char req;
+    enum DataReq {
+        OPTIONAL = 0,
+        REQUIRED
+    } req;
 };
+
+struct SNDCFile;
 
 struct Module {
     const char* name;
@@ -71,7 +78,7 @@ struct Module {
     int (*process)(struct Node* node);
     int (*teardown)(struct Node* node);
 
-    FILE* file;
+    struct SNDCFile* file;
 };
 
 extern const struct Module* modules[];
@@ -80,7 +87,8 @@ int module_load_all();
 const struct Module* module_find(const char* name);
 int module_get_input_slot(const struct Module* module, const char* name);
 int module_get_output_slot(const struct Module* module, const char* name);
-int module_import(struct Module* module, const char* file);
+int module_import(struct Module* module, const char* name, const char* file);
+void module_free_import(struct Module* module);
 
 
 struct Stack {
@@ -96,11 +104,10 @@ struct Node* stack_node_new_from_module(struct Stack* stack,
                                         const char* name,
                                         const struct Module* module);
 struct Data* stack_data_new(struct Stack* stack);
+struct Module* stack_import_new(struct Stack* stack);
 struct Node* stack_get_node(struct Stack* stack, const char* name);
-int stack_valid(struct Stack* stack);
 int stack_process(struct Stack* stack);
 
-struct SNDCFile;
 int stack_load(struct Stack* stack, struct SNDCFile* file);
 
 #endif

@@ -1,11 +1,11 @@
 #include <stdlib.h>
+#include <string.h>
 
 #include "sndc.h"
 
 void data_init(struct Data* data) {
+    memset(data, 0, sizeof(*data));
     data->type = DATA_FLOAT;
-    data->content.f = 0;
-    data->ready = 0;
 }
 
 void data_free(struct Data* data) {
