@@ -36,5 +36,6 @@ float convol(struct Buffer* buf,
              struct Buffer* fun,
              unsigned int maskWidth,
              unsigned int pos);
+void addbuf(float* dest, float* src, unsigned int size);
 
 #endif

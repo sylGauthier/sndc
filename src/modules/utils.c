@@ -141,3 +141,11 @@ float convol(struct Buffer* buf,
     res /= sum;
     return res;
 }
+
+void addbuf(float* dest, float* src, unsigned int size) {
+    unsigned int i;
+
+    for (i = 0; i < size; i++) {
+        dest[i] += src[i];
+    }
+}

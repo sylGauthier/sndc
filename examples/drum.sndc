@@ -1,0 +1,16 @@
+import "examples/kick.sndc" as kick;
+import "examples/snare.sndc" as snare;
+
+k: kick {}
+s: snare {}
+
+db: drumbox {
+    bpm: 120;
+    divs: 4;
+
+    sample0: k.out;
+    sample1: s.out;
+
+    seq0: "x--- x--- x--- x---";
+    seq1: "--x- x-x- --x- x-xx";
+}

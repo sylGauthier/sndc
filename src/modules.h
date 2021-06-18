@@ -7,6 +7,7 @@ extern const struct Module filter;
 extern const struct Module add;
 extern const struct Module mul;
 extern const struct Module func;
+extern const struct Module drumbox;
 
 const struct Module* modules[] = {
     &osc,
@@ -18,5 +19,6 @@ const struct Module* modules[] = {
     &add,
     &mul,
     &func,
+    &drumbox,
     NULL
 };
