@@ -2,8 +2,8 @@
 #include <stdio.h>
 #include <math.h>
 
-#include "../sndc.h"
-#include "utils.h"
+#include <sndc.h>
+#include <modules/utils.h>
 
 static int func_setup(struct Node* n);
 static int func_process(struct Node* n);

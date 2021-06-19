@@ -4,8 +4,8 @@
 #include <float.h>
 #include <math.h>
 
-#include "../sndc.h"
-#include "utils.h"
+#include <sndc.h>
+#include <modules/utils.h>
 
 static int noise_process(struct Node* n);
 static int noise_setup(struct Node* n);

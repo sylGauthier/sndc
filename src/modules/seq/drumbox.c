@@ -1,8 +1,8 @@
 #include <stdlib.h>
 #include <stdio.h>
 
-#include "../sndc.h"
-#include "utils.h"
+#include <sndc.h>
+#include <modules/utils.h>
 
 static int drumbox_process(struct Node* n);
 static int drumbox_setup(struct Node* n);

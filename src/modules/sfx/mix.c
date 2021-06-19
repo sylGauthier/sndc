@@ -1,8 +1,8 @@
 #include <stdlib.h>
 #include <math.h>
 
-#include "../sndc.h"
-#include "utils.h"
+#include <sndc.h>
+#include <modules/utils.h>
 
 #define IN0 0
 #define IN1 1

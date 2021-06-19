@@ -2,8 +2,8 @@
 #include <stdio.h>
 #include <string.h>
 
-#include "../sndc.h"
-#include "utils.h"
+#include <sndc.h>
+#include <modules/utils.h>
 
 static int print_process(struct Node* n);
 static int print_setup(struct Node* n);

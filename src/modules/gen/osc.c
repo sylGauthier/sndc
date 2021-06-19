@@ -4,8 +4,8 @@
 #include <float.h>
 #include <math.h>
 
-#include "../sndc.h"
-#include "utils.h"
+#include <sndc.h>
+#include <modules/utils.h>
 
 #define RES 2048
 #define OUT 0

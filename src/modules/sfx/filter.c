@@ -3,8 +3,8 @@
 #include <string.h>
 #include <math.h>
 
-#include "../sndc.h"
-#include "utils.h"
+#include <sndc.h>
+#include <modules/utils.h>
 
 #define W_SIZE 2048
 
