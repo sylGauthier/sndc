@@ -76,23 +76,16 @@ static int help(int argc, char** argv) {
 int main(int argc, char** argv) {
     struct Stack s;
     struct SNDCFile file = {0};
-    FILE *in = NULL, *out = NULL;
+    FILE *out = NULL;
     char ok = 0;
 
-    if (argc > 1 && !strcmp(argv[1], "-l")) {
+    if (argc < 2) {
+        return help(argc, argv);
+    } else if (!strcmp(argv[1], "-l")) {
         list_modules();
         return 0;
-    } else if (argc > 1 && !strcmp(argv[1], "-h")) {
+    } else if (!strcmp(argv[1], "-h")) {
         return help(argc, argv);
-    }
-
-    if (argc < 2) {
-        in = stdin;
-    } else {
-        if (!(in = fopen(argv[1], "r"))) {
-            fprintf(stderr, "Error: can't open %s for lecture\n", argv[1]);
-            return 1;
-        }
     }
 
     if (argc < 3) {
@@ -100,13 +93,12 @@ int main(int argc, char** argv) {
     } else {
         if (!(out = fopen(argv[2], "r"))) {
             fprintf(stderr, "Error: can't open %s for writing\n", argv[2]);
-            fclose(in);
             return 1;
         }
     }
 
     stack_init(&s);
-    if (!parse_sndc(&file, in)) {
+    if (!parse_sndc(&file, argv[1])) {
         fprintf(stderr, "Error: parsing failed\n");
     } else if (!stack_load(&s, &file)) {
         fprintf(stderr, "Error: loading stack failed\n");
@@ -128,7 +120,6 @@ int main(int argc, char** argv) {
     }
     stack_free(&s);
     free_sndc(&file);
-    if (in) fclose(in);
     if (out) fclose(out);
 
     return !ok;

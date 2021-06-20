@@ -92,14 +92,11 @@ static int import_teardown(struct Node* node) {
 }
 
 int module_import(struct Module* module, const char* name, const char* file) {
-    FILE* in;
     int sndcOk = 0, ok = 0;
 
-    if (!(in = fopen(file, "r"))) {
-        fprintf(stderr, "Error: can't open module: %s\n", file);
-    } else if (!(module->file = malloc(sizeof(struct SNDCFile)))) {
+    if (!(module->file = malloc(sizeof(struct SNDCFile)))) {
         fprintf(stderr, "Error: %s: can't allocate sndc file\n", file);
-    } else if (!(sndcOk = parse_sndc(module->file, in))) {
+    } else if (!(sndcOk = parse_sndc(module->file, file))) {
         fprintf(stderr, "Error: %s: parsing failed\n", file);
     } else {
         struct SNDCFile* f = module->file;
@@ -137,15 +134,13 @@ int module_import(struct Module* module, const char* name, const char* file) {
             }
         }
     }
-    if (in) {
-        fclose(in);
-    }
     if (!ok) {
         if (module->file) {
             if (sndcOk) {
                 free_sndc(module->file);
             }
             free(module->file);
+            module->file = NULL;
         }
     }
     return ok;

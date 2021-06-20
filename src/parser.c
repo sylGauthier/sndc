@@ -227,7 +227,9 @@ static int parse_import(struct SNDCFile* f, int* err) {
     } else if ((token = yylex()) != STRING_LIT) {
         invalid_token(token, STRING_LIT);
         *err = ERR_TOKEN;
-    } else if (!(imp->fileName = str_cpy(yytext + 1))) {
+    } else if (!(imp->fileName = malloc(strlen(f->path) + strlen(yytext) + 1))
+            || !strcpy(imp->fileName, f->path)
+            || !strcpy(imp->fileName + strlen(f->path), yytext + 1)) {
         *err = ERR_OTHER;
     } else if ((token = yylex()) != AS) {
         invalid_token(token, AS);
@@ -293,43 +295,65 @@ static int parse_export(struct SNDCFile* f, int* err) {
     return 0;
 }
 
-int parse_sndc(struct SNDCFile* file, FILE* in) {
+int parse_sndc(struct SNDCFile* file, const char* name) {
     int err, token, ok = 1;
+    FILE* in;
 
-    yyin = in;
-    memset(file, 0, sizeof(struct SNDCFile));
-    while (ok && (token = yylex())) {
-        switch (token) {
-            case IDENT:
-                if (!parse_node(file, &err)) {
-                    ok = 0;
-                }
-                break;
-            case IMPORT:
-                if (!parse_import(file, &err)) {
-                    ok = 0;
-                }
-                break;
-            case EXPORT:
-                if (!parse_export(file, &err)) {
-                    ok = 0;
-                }
-                break;
+    memset(file, 0, sizeof(*file));
+    if (!(in = fopen(name, "r"))) {
+        fprintf(stderr, "Error: can't open file: %s\n", name);
+    } else if (!(file->path = str_cpy(name))) {
+        fprintf(stderr, "Error: can't dup file name: %s\n", name);
+    } else {
+        char* slash;
+
+        if ((slash = strrchr(file->path, '/'))) {
+            *(slash + 1) = '\0';
+        } else {
+            free(file->path);
+            file->path = NULL;
+        }
+
+        yyin = in;
+        while (ok && (token = yylex())) {
+            switch (token) {
+                case IDENT:
+                    if (!parse_node(file, &err)) {
+                        ok = 0;
+                    }
+                    break;
+                case IMPORT:
+                    if (!parse_import(file, &err)) {
+                        ok = 0;
+                    }
+                    break;
+                case EXPORT:
+                    if (!parse_export(file, &err)) {
+                        ok = 0;
+                    }
+                    break;
+                default:
+                    invalid_token(token, UNKNOWN);
+                    break;
+            }
+        }
+        if (token == END) err = ERR_NO;
+        yylex_destroy();
+        switch (err) {
+            case ERR_NO:
+            case ERR_EOF:
+                fclose(in);
+                return 1;
             default:
-                invalid_token(token, UNKNOWN);
-                break;
+                fprintf(stderr,
+                        "Error: file parsing failed with error %d\n",
+                        err);
         }
     }
-    if (token == END) err = ERR_NO;
-    yylex_destroy();
-    switch (err) {
-        case ERR_NO:
-        case ERR_EOF:
-            return 1;
-        default:
-            fprintf(stderr, "Error: file parsing failed with error %d\n", err);
-            return 0;
+    if (in) {
+        fclose(in);
     }
+    free_sndc(file);
     return 0;
 }
 
@@ -368,4 +392,5 @@ void free_sndc(struct SNDCFile* file) {
             }
         }
     }
+    free(file->path);
 }

@@ -53,10 +53,12 @@ struct SNDCFile {
     struct Export exports[MAX_EXPORT];
     struct Entry entries[MAX_ENTRIES];
     unsigned int numEntries, numImport, numExport;
+
+    char* path;
 };
 
 char* str_cpy(const char* s);
-int parse_sndc(struct SNDCFile* file, FILE* in);
+int parse_sndc(struct SNDCFile* file, const char* name);
 void free_sndc(struct SNDCFile* file);
 
 #endif
