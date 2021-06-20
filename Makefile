@@ -22,3 +22,4 @@ B = "$(PREFIX)/$(BINDIR)"
 install: sndc
 	mkdir -p $B
 	cp $< $B
+	cp wrappers/sndc_play wrappers/sndc_export $B

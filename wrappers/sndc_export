@@ -1,0 +1,54 @@
+#!/bin/sh
+
+die() {
+    printf -- "$@\n" 1>&2
+    exit 1
+}
+
+helpdie() {
+    printhelp 1>&2
+    exit 1
+}
+
+needcmd() {
+    command -v "$1" 2>&1 > /dev/null || die "Error: command '$1' not found"
+}
+
+printhelp() {
+    printf "$0 <inFile> <outFile> [-b sampleRate]\n"
+}
+
+getformat() {
+    e="$(printf I | od -to2 | head -n1 | cut -f2 -d" " | cut -c6)"
+    if [ "$e" = "0" ] ; then
+        printf -- "-B -e floating-point -b 32"
+    else
+        printf -- "-L -e floating-point -b 32"
+    fi
+}
+
+needcmd sox
+needcmd sndc
+needcmd lscpu
+
+if [ -z "$1" -o -z "$2" ] ; then
+    helpdie
+fi
+
+IN="$1"
+OUT="$2"
+shift
+shift
+
+if [ "$1" = "-b" ] ; then
+    if [ -z "$2" ] ; then
+        helpdie
+    fi
+    BR="$2"
+else
+    BR="44100"
+fi
+
+FORMAT="$(getformat)"
+
+sndc "$IN" | sox -t raw -c 1 -r "$BR" $FORMAT - "$OUT"
