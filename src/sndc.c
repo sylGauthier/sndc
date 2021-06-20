@@ -55,16 +55,15 @@ static int help_module(const char* module) {
 }
 
 static int help(int argc, char** argv) {
-    if (argc == 2) {
+    if (argc <= 2) {
         printf("Usage: %s [-l]\n"
                "       %s [-h [module]]\n"
-               "       %s [inFile [outFile]]\n",
+               "       %s inFile [outFile]\n",
                argv[0], argv[0], argv[0]);
         printf("Options:\n");
         printf("    -l: list available modules\n");
         printf("    -h: print this help\n");
         printf("    -h <module>: print module specification\n");
-        printf("If no input file specified, will read from stdin.\n");
         printf("If no output file specified, will write to stdout.\n");
         return 0;
     } else if (argc > 2) {
@@ -80,7 +79,8 @@ int main(int argc, char** argv) {
     char ok = 0;
 
     if (argc < 2) {
-        return help(argc, argv);
+        help(argc, argv);
+        return 1;
     } else if (!strcmp(argv[1], "-l")) {
         list_modules();
         return 0;

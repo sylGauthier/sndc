@@ -1,5 +1,8 @@
 #DEBUG := 1
 
+PREFIX ?= /usr/local
+BINDIR ?= bin
+
 CFLAGS ?= -std=c89 -pedantic -march=native -Wall -Wno-unused-function $(if $(DEBUG),-g -DDEBUG,-O3) -Isrc -D_POSIX_C_SOURCE=200112L
 LDFLAGS += -lm
 
@@ -14,3 +17,8 @@ sndc: $(OBJECTS)
 
 clean:
 	rm -rf $(OBJECTS) sndc
+
+B = "$(PREFIX)/$(BINDIR)"
+install: sndc
+	mkdir -p $B
+	cp $< $B
