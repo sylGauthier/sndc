@@ -310,8 +310,7 @@ int parse_sndc(struct SNDCFile* file, const char* name) {
         if ((slash = strrchr(file->path, '/'))) {
             *(slash + 1) = '\0';
         } else {
-            free(file->path);
-            file->path = NULL;
+            file->path[0] = '\0';
         }
 
         yyin = in;
