@@ -1,5 +1,5 @@
-import "kick.sndc" as kick;
-import "snare.sndc" as snare;
+import "drumkit/kick.sndc" as kick;
+import "drumkit/snare.sndc" as snare;
 
 k: kick {}
 s: snare {}
