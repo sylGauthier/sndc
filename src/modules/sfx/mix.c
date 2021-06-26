@@ -4,22 +4,31 @@
 #include <sndc.h>
 #include <modules/utils.h>
 
-#define IN0 0
-#define IN1 1
-#define IN2 2
-#define IN3 3
 #define OUT 0
 
 static int mix_process(struct Node* n);
 static int mix_setup(struct Node* n);
 
 const struct Module mix = {
-    "mix", "Mixer for up to 4 input buffers, will normalize output",
+    "mix", "Mixer for up to 8 input buffers",
     {
-        {"input0",  DATA_BUFFER,    REQUIRED},
-        {"input1",  DATA_BUFFER,    REQUIRED},
-        {"input2",  DATA_BUFFER,    OPTIONAL},
-        {"input3",  DATA_BUFFER,    OPTIONAL}
+        {"input0",  DATA_BUFFER,                REQUIRED},
+        {"input1",  DATA_BUFFER,                REQUIRED},
+        {"input2",  DATA_BUFFER,                OPTIONAL},
+        {"input3",  DATA_BUFFER,                OPTIONAL},
+        {"input4",  DATA_BUFFER,                OPTIONAL},
+        {"input5",  DATA_BUFFER,                OPTIONAL},
+        {"input6",  DATA_BUFFER,                OPTIONAL},
+        {"input7",  DATA_BUFFER,                OPTIONAL},
+
+        {"gain0",   DATA_FLOAT | DATA_BUFFER,   OPTIONAL},
+        {"gain1",   DATA_FLOAT | DATA_BUFFER,   OPTIONAL},
+        {"gain2",   DATA_FLOAT | DATA_BUFFER,   OPTIONAL},
+        {"gain3",   DATA_FLOAT | DATA_BUFFER,   OPTIONAL},
+        {"gain4",   DATA_FLOAT | DATA_BUFFER,   OPTIONAL},
+        {"gain5",   DATA_FLOAT | DATA_BUFFER,   OPTIONAL},
+        {"gain6",   DATA_FLOAT | DATA_BUFFER,   OPTIONAL},
+        {"gain7",   DATA_FLOAT | DATA_BUFFER,   OPTIONAL},
     },
     {
         {"out",     DATA_BUFFER,    REQUIRED}
@@ -29,13 +38,33 @@ const struct Module mix = {
     NULL
 };
 
+enum MixInputType {
+    IN0 = 0,
+    IN1,
+    IN2,
+    IN3,
+    IN4,
+    IN5,
+    IN6,
+    IN7,
+
+    GN0,
+    GN1,
+    GN2,
+    GN3,
+    GN4,
+    GN5,
+    GN6,
+    GN7,
+
+    NUM_INPUTS
+};
+
 static int mix_setup(struct Node* n) {
     unsigned int maxSize = 0, i;
 
-    for (i = 0; i < 4; i++) {
-        if (!data_valid(n->inputs[i], mix.inputs + i, n->name)) {
-            return 0;
-        }
+    GENERIC_CHECK_INPUTS(n, mix);
+    for (i = 0; i < 8; i++) {
         if (n->inputs[i]) {
             if (n->inputs[i]->content.buf.size > maxSize) {
                 maxSize = n->inputs[i]->content.buf.size;
@@ -52,56 +81,39 @@ static int mix_setup(struct Node* n) {
     n->outputs[OUT]->type = DATA_BUFFER;
     n->outputs[OUT]->content.buf.size = maxSize;
     n->outputs[OUT]->content.buf.samplingRate =
-        n->inputs[0]->content.buf.samplingRate;
+        n->inputs[IN0]->content.buf.samplingRate;
     return 1;
 }
 
 static int mix_process(struct Node* n) {
     struct Data* out = n->outputs[OUT];
-    float* bufs[4] = {NULL};
+    struct Data* gains[8] = {NULL};
+    float *bufs[8] = {NULL};
     float* res;
-    unsigned int sizes[4] = {0}, sr[4] = {0}, i, numInput = 2;
-    unsigned int maxSize = 0;
+    unsigned int sizes[8] = {0}, i;
+    unsigned int size = 0;
 
-    bufs[0] = n->inputs[IN0]->content.buf.data;
-    sizes[0] = n->inputs[IN0]->content.buf.size;
-    sr[0] = n->inputs[IN0]->content.buf.samplingRate;
-
-    bufs[1] = n->inputs[IN1]->content.buf.data;
-    sizes[1] = n->inputs[IN1]->content.buf.size;
-    sr[1] = n->inputs[IN1]->content.buf.samplingRate;
-
-    if (n->inputs[IN2]) {
-        bufs[2] = n->inputs[IN2]->content.buf.data;
-        sizes[2] = n->inputs[IN2]->content.buf.size;
-        sr[2] = n->inputs[IN2]->content.buf.samplingRate;
-        numInput++;
-        if (n->inputs[IN3]) {
-            bufs[3] = n->inputs[IN3]->content.buf.data;
-            sizes[3] = n->inputs[IN3]->content.buf.size;
-            sr[3] = n->inputs[IN3]->content.buf.samplingRate;
-            numInput++;
+    for (i = 0; i < 8; i++) {
+        if (n->inputs[IN0 + i]) {
+            bufs[i] = n->inputs[IN0 + i]->content.buf.data;
+            sizes[i] = n->inputs[IN0 + i]->content.buf.size;
+        }
+        if (n->inputs[GN0 + i]) {
+            gains[i] = n->inputs[GN0 + i];
         }
     }
-    for (i = 0; i < numInput; i++) {
-        if (sr[i] != sr[0]) {
-            fprintf(stderr, "Error: %s: inputs have different sampling rates\n",
-                            n->name);
-            return 0;
+    size = n->outputs[0]->content.buf.size;
+    if (!(res = calloc(size, sizeof(float)))) return 0;
+
+    for (i = 0; i < 8; i++) {
+        unsigned int j;
+        float t;
+        for (j = 0; j < sizes[i]; j++) {
+            t = (float) j / (float) sizes[i];
+            res[j] += data_float(gains[i], t, 1.) * bufs[i][j];
         }
-    }
-    for (i = 0; i < numInput; i++) if (sizes[i] > maxSize) maxSize = sizes[i];
-    if (!(res = malloc(maxSize * sizeof(float)))) return 0;
-    for (i = 0; i < maxSize; i++) {
-        res[i] = 0;
-        if (i < sizes[0]) res[i] += bufs[0][i];
-        if (i < sizes[1]) res[i] += bufs[1][i];
-        if (i < sizes[2]) res[i] += bufs[2][i];
-        if (i < sizes[3]) res[i] += bufs[3][i];
     }
     out->type = DATA_BUFFER;
     out->content.buf.data = res;
-    out->content.buf.size = maxSize;
-    out->content.buf.samplingRate = sr[0];
     return 1;
 }
