@@ -46,6 +46,7 @@ ident           {letter}({letter}|{digit})*
 ("0b"|"0B"){bindigit}(_?{bindigit})*        { intVal = strtol(yytext+2, NULL, 2);
                                               return BIN_LIT;      }
 \"(?:[^"\\]|\\.)*\"                         { return STRING_LIT;      }
+\<.*\>                                      { return IMPORT_LIT;      }
 
 "import"                                    { return IMPORT; }
 "export"                                    { return EXPORT; }

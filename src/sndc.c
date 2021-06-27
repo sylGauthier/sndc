@@ -1,7 +1,10 @@
 #include <string.h>
+#include <stdlib.h>
 
 #include "sndc.h"
 #include "parser.h"
+
+char sndcPath[MAX_SNDC_PATH][MAX_PATH_LENGTH];
 
 static void list_modules() {
     unsigned int i;
@@ -72,11 +75,39 @@ static int help(int argc, char** argv) {
     return 1;
 }
 
+static int init_path() {
+    const char* envpath;
+    unsigned int i = 0, j = 0;
+
+    if ((envpath = getenv("SNDCPATH"))) {
+        const char* cur = envpath;
+
+        while (*cur) {
+            if (i >= MAX_SNDC_PATH) {
+                fprintf(stderr, "Warning: SNDCPATH has too many paths\n");
+                break;
+            } else if (*cur == ':') {
+                i++;
+                j = 0;
+                cur++;
+            } else if (j < MAX_PATH_LENGTH - 1) {
+                sndcPath[i][j++] = *cur;
+                cur++;
+            } else {
+                fprintf(stderr, "Warning: SNDCPATH too long\n");
+                sndcPath[i][0] = '\0';
+                cur = strchr(cur, ':');
+            }
+        }
+    }
+    return 1;
+}
+
 int main(int argc, char** argv) {
     struct Stack s;
     struct SNDCFile file = {0};
     FILE *out = NULL;
-    char ok = 0;
+    char ok = 0, sndcInit = 0, stackInit = 0;
 
     if (argc < 2) {
         help(argc, argv);
@@ -97,10 +128,11 @@ int main(int argc, char** argv) {
         }
     }
 
+    init_path();
     stack_init(&s);
-    if (!parse_sndc(&file, argv[1])) {
+    if (!(sndcInit = parse_sndc(&file, argv[1]))) {
         fprintf(stderr, "Error: parsing failed\n");
-    } else if (!stack_load(&s, &file)) {
+    } else if (!(stackInit = stack_load(&s, &file))) {
         fprintf(stderr, "Error: loading stack failed\n");
     } else if (!stack_process(&s)) {
         fprintf(stderr, "Error: processing stack failed\n");
@@ -118,8 +150,8 @@ int main(int argc, char** argv) {
         }
         ok = 1;
     }
-    stack_free(&s);
-    free_sndc(&file);
+    if (stackInit) stack_free(&s);
+    if (sndcInit) free_sndc(&file);
     if (out) fclose(out);
 
     return !ok;

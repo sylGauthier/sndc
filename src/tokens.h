@@ -31,6 +31,7 @@ enum Token {
     BIN_LIT,
     FLOAT_LIT,
     STRING_LIT,
+    IMPORT_LIT,
 
     /* Keywords */
     IMPORT,

@@ -27,7 +27,8 @@ static const char* tokenNames[] = {
     "octal literal",
     "binary literal",
     "float literal",
-    "string",
+    "string literal",
+    "import literal",
 
     "import",
     "export",
@@ -218,18 +219,67 @@ static int parse_node(struct SNDCFile* f, int* err) {
     return 0;
 }
 
+static int file_exists(const char* name) {
+    FILE* f;
+
+    if ((f = fopen(name, "r"))) {
+        fclose(f);
+        return 1;
+    }
+    return 0;
+}
+
+static char* find_import(struct SNDCFile* f) {
+    int token;
+    char* ret = NULL;
+
+    switch ((token = yylex())) {
+        case STRING_LIT:
+            if (!(ret = malloc(strlen(f->path) + strlen(yytext) + 1))
+                    || !strcpy(ret, f->path)
+                    || !strcpy(ret + strlen(f->path), yytext + 1)) {
+                return NULL;
+            }
+            ret[strlen(ret) - 1] = '\0';
+            break;
+        case IMPORT_LIT:
+            {
+                unsigned int i = 0;
+
+                if (!(ret = malloc(MAX_PATH_LENGTH + strlen(yytext) + 2))) {
+                    break;
+                }
+
+                while (i < MAX_SNDC_PATH) {
+                    strcpy(ret, sndcPath[i]);
+                    strcpy(ret + strlen(ret) + 1, yytext + 1);
+                    ret[strlen(sndcPath[i])] = '/';
+                    ret[strlen(ret) - 1] = '\0';
+                    if (file_exists(ret)) {
+                        return ret;
+                    }
+                    i++;
+                }
+                free(ret);
+                ret = NULL;
+            }
+            break;
+        default:
+            invalid_token(token, UNKNOWN);
+    }
+    if (!ret) {
+        fprintf(stderr, "Error: can't find imported file: %s\n", yytext);
+    }
+    return ret;
+}
+
 static int parse_import(struct SNDCFile* f, int* err) {
     int token;
     struct Import* imp = NULL;
 
     if (!(imp = new_import(f))) {
         fprintf(stderr, "Error: can't add import, too many imports?\n");
-    } else if ((token = yylex()) != STRING_LIT) {
-        invalid_token(token, STRING_LIT);
-        *err = ERR_TOKEN;
-    } else if (!(imp->fileName = malloc(strlen(f->path) + strlen(yytext) + 1))
-            || !strcpy(imp->fileName, f->path)
-            || !strcpy(imp->fileName + strlen(f->path), yytext + 1)) {
+    } else if (!(imp->fileName = find_import(f))) {
         *err = ERR_OTHER;
     } else if ((token = yylex()) != AS) {
         invalid_token(token, AS);
@@ -243,7 +293,6 @@ static int parse_import(struct SNDCFile* f, int* err) {
         invalid_token(token, SEMICOLON);
         *err = ERR_TOKEN;
     } else {
-        imp->fileName[strlen(imp->fileName) - 1] = '\0';
         return 1;
     }
     return 0;

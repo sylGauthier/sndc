@@ -271,5 +271,6 @@ int stack_load(struct Stack* stack, struct SNDCFile* file) {
             }
         }
     }
+    if (!ok) stack_free(stack);
     return ok;
 }

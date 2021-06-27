@@ -3,8 +3,13 @@
 #ifndef SDNC_H
 #define SDNC_H
 
-#define MAX_INPUTS  16
-#define MAX_OUTPUTS 16
+#define MAX_INPUTS      16
+#define MAX_OUTPUTS     16
+
+#define MAX_SNDC_PATH   16
+#define MAX_PATH_LENGTH 128
+
+extern char sndcPath[MAX_SNDC_PATH][MAX_PATH_LENGTH];
 
 enum InterpType {
     INTERP_STEP,
