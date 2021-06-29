@@ -363,6 +363,7 @@ int parse_sndc(struct SNDCFile* file, const char* name) {
         }
 
         yyin = in;
+        yylineno = 1;
         while (ok && (token = yylex())) {
             switch (token) {
                 case IDENT:
