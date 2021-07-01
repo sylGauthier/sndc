@@ -90,10 +90,58 @@ NEW_ELEM_FUNC(export, SNDCFile, Export, exports, numExport, MAX_EXPORT)
 NEW_ELEM_FUNC(entry, SNDCFile, Entry, entries, numEntries, MAX_ENTRIES)
 
 
+static int parse_ref(struct Field* field, char* name) {
+    int token;
+
+    field->type = FIELD_REF;
+    field->data.ref.name = name;
+
+    if ((token = yylex()) != IDENT) {
+        invalid_token(token, IDENT);
+    } else if (!(field->data.ref.field = str_cpy(strVal))) {
+        fprintf(stderr, "Error: parse_data: can't alloc string\n");
+    } else {
+        return 1;
+    }
+    return 0;
+}
+
+static int parse_field(struct SNDCFile*, struct Entry*, int*);
+static void free_entry(struct Entry*);
+
+static int parse_sub_entry(struct SNDCFile* f,
+                           struct Field* field,
+                           char* name) {
+    struct Entry* new = NULL;
+
+    if (!(new = calloc(1, sizeof(*new)))) {
+        fprintf(stderr, "Error: parse_sub_entry: can't alloc entry\n");
+    } else {
+        int err = ERR_NO;
+
+        field->type = FIELD_NODE;
+        field->data.node = new;
+        new->type = name;
+        new->name = NULL;
+
+        while (parse_field(f, new, &err));
+
+        if (err != ERR_NO) {
+            free_entry(new);
+            free(new);
+            field->data.node = NULL;
+            return 0;
+        }
+        return 1;
+    }
+    return 0;
+}
+
 static int parse_data(struct SNDCFile* f,
                       struct Entry* n,
                       struct Field* field) {
     int token, ok = 0;
+    char* sv = NULL;
 
     switch ((token = yylex())) {
         case DEC_LIT:
@@ -124,29 +172,32 @@ static int parse_data(struct SNDCFile* f,
             }
             break;
         case IDENT:
-            field->type = FIELD_REF;
-            if (!(field->data.ref.name = str_cpy(strVal))) {
-                fprintf(stderr, "Error: parse_data: can't alloc string\n");
-            } else if ((token = yylex()) != DOT) {
-                invalid_token(token, DOT);
-            } else if ((token = yylex()) != IDENT) {
-                invalid_token(token, IDENT);
-            } else if (!(field->data.ref.field = str_cpy(strVal))) {
-                fprintf(stderr, "Error: parse_data: can't alloc string\n");
-            } else {
-                ok = 1;
+            if ((sv = str_cpy(strVal))) {
+                switch ((token = yylex())) {
+                    case OBRACE:
+                        ok = parse_sub_entry(f, field, sv);
+                        break;
+                    case DOT:
+                        ok = parse_ref(field, sv);
+                        break;
+                    default:
+                        invalid_token(token, UNKNOWN);
+                        break;
+                }
             }
             break;
         default:
             invalid_token(token, UNKNOWN);
             return 0;
     }
-    if (!ok) return 0;
-    if ((token = yylex()) != SEMICOLON) {
+    if (ok && (token = yylex()) != SEMICOLON) {
         invalid_token(token, SEMICOLON);
-        return 0;
+        ok = 0;
     }
-    return 1;
+    if (!ok) {
+        free(sv);
+    }
+    return ok;
 }
 
 static int parse_field(struct SNDCFile* f,
@@ -406,6 +457,34 @@ int parse_sndc(struct SNDCFile* file, const char* name) {
     return 0;
 }
 
+static void free_entry(struct Entry* entry) {
+    unsigned int i;
+
+    if (entry) {
+        free(entry->name);
+        free(entry->type);
+        for (i = 0; i < entry->numFields; i++) {
+            struct Field* f = &entry->fields[i];
+
+            free(f->name);
+            switch (f->type) {
+                case FIELD_STRING:
+                    free(f->data.str);
+                    break;
+                case FIELD_REF:
+                    free(f->data.ref.name);
+                    free(f->data.ref.field);
+                    break;
+                case FIELD_NODE:
+                    free_entry(f->data.node);
+                    free(f->data.node);
+                default:
+                    break;
+            }
+        }
+    }
+}
+
 void free_sndc(struct SNDCFile* file) {
     unsigned int i;
 
@@ -421,25 +500,7 @@ void free_sndc(struct SNDCFile* file) {
     }
 
     for (i = 0; i < file->numEntries; i++) {
-        unsigned int j;
-
-        free(file->entries[i].name);
-        free(file->entries[i].type);
-        for (j = 0; j < file->entries[i].numFields; j++) {
-            struct Field* f = &file->entries[i].fields[j];
-            free(f->name);
-            switch (f->type) {
-                case FIELD_STRING:
-                    free(f->data.str);
-                    break;
-                case FIELD_REF:
-                    free(f->data.ref.name);
-                    free(f->data.ref.field);
-                    break;
-                default:
-                    break;
-            }
-        }
+        free_entry(file->entries + i);
     }
     free(file->path);
 }

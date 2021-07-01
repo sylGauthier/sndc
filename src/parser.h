@@ -18,12 +18,14 @@ struct Field {
     enum FieldType {
         FIELD_FLOAT,
         FIELD_STRING,
-        FIELD_REF
+        FIELD_REF,
+        FIELD_NODE
     } type;
     union FieldData {
         float f;
         char* str;
         struct Ref ref;
+        struct Entry* node;
     } data;
 };
 

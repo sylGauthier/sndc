@@ -29,12 +29,14 @@ struct Data {
         DATA_UNKNOWN    = 0,
         DATA_BUFFER     = 1 << 0,
         DATA_FLOAT      = 1 << 1,
-        DATA_STRING     = 1 << 2
+        DATA_STRING     = 1 << 2,
+        DATA_NODE       = 1 << 3
     } type;
     union DataContent {
         struct Buffer buf;
         float f;
         char* str;
+        struct Node* node;
     } content;
     char ready;
 };
@@ -105,9 +107,12 @@ struct Stack {
 
 void stack_init(struct Stack* stack);
 void stack_free(struct Stack* stack);
-struct Node* stack_node_new_from_module(struct Stack* stack,
-                                        const char* name,
-                                        const struct Module* module);
+
+struct Node* stack_node_new(struct Stack* stack, const char* name);
+int stack_node_set_module(struct Stack* stack,
+                          struct Node* node,
+                          const struct Module* module);
+
 struct Data* stack_data_new(struct Stack* stack);
 struct Module* stack_import_new(struct Stack* stack);
 struct Node* stack_get_node(struct Stack* stack, const char* name);

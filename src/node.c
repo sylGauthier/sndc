@@ -20,10 +20,12 @@ void node_init(struct Node* node) {
 }
 
 void node_free(struct Node* node) {
-    if (node->teardown) {
-        node->teardown(node);
+    if (node) {
+        if (node->teardown) {
+            node->teardown(node);
+        }
+        free((char*)node->name);
     }
-    free((char*)node->name);
 }
 
 void stack_init(struct Stack* stack) {
@@ -55,45 +57,47 @@ void stack_free(struct Stack* stack) {
     free(stack->data);
 }
 
-struct Node* stack_node_new_from_module(struct Stack* stack,
-                                        const char* name,
-                                        const struct Module* module) {
+struct Node* stack_node_new(struct Stack* stack, const char* name) {
+    struct Node* new = NULL;
     void* tmp;
-    struct Node* new;
-    unsigned int i;
 
     if (!(tmp = realloc(stack->nodes,
-                        (stack->numNodes + 1) * sizeof(struct Node)))) {
+                    (stack->numNodes + 1) * sizeof(struct Node)))) {
         return NULL;
     }
     stack->nodes = tmp;
     if (!(new = malloc(sizeof(struct Node)))) return NULL;
-    stack->nodes[stack->numNodes] = new;
-    stack->numNodes++;
 
     node_init(new);
     if (!(new->name = str_cpy(name))) {
         free(new);
         return NULL;
     }
-    new->module = module;
-    new->setup = module->setup;
-    new->process = module->process;
-    new->teardown = module->teardown;
+    stack->nodes[stack->numNodes] = new;
+    stack->numNodes++;
+    return new;
+}
+
+int stack_node_set_module(struct Stack* stack,
+                          struct Node* node,
+                          const struct Module* module) {
+    unsigned int i;
+
+    node->module = module;
+    node->setup = module->setup;
+    node->process = module->process;
+    node->teardown = module->teardown;
     for (i = 0; i < MAX_OUTPUTS; i++) {
         if (module->outputs[i].name) {
             struct Data* data;
 
             if (!(data = stack_data_new(stack))) {
-                stack->numNodes--;
-                node_free(new);
-                free(new);
-                return NULL;
+                return 0;
             }
-            new->outputs[i] = data;
+            node->outputs[i] = data;
         }
     }
-    return new;
+    return 1;
 }
 
 struct Data* stack_data_new(struct Stack* stack) {
@@ -152,6 +156,8 @@ int stack_process(struct Stack* stack) {
     return 1;
 }
 
+static int node_load(struct Stack* stack, struct Entry* e, struct Node* n);
+
 static int load_input(struct Stack* stack,
                       const struct Module* mod,
                       struct Node* n,
@@ -208,6 +214,19 @@ static int load_input(struct Stack* stack,
                     n->inputs[slot] = r->outputs[refslot];
                     return 1;
                 }
+            case FIELD_NODE:
+                if ((d = stack_data_new(stack))) {
+                    d->type = DATA_NODE;
+                    if ((d->content.node = calloc(1, sizeof(struct Node)))
+                            && node_load(stack,
+                                         f->data.node,
+                                         d->content.node)) {
+                        n->inputs[slot] = d;
+                        return 1;
+                    }
+                    free(d->content.node);
+                }
+                break;
         }
         if (d) {
             data_free(d);
@@ -228,6 +247,33 @@ static struct Module* imported_module_find(struct Stack* s, const char* name) {
     return NULL;
 }
 
+static int node_load(struct Stack* stack, struct Entry* e, struct Node* n) {
+    const struct Module* mod;
+    int ok = 1;
+
+    if (       !(mod = imported_module_find(stack, e->type))
+            && !(mod = module_find(e->type))) {
+        fprintf(stderr, "Error: %s: no such module\n", e->type);
+        ok = 0;
+    } else if (!stack_node_set_module(stack, n, mod)) {
+        fprintf(stderr, "Error: can't create new node\n");
+        ok = 0;
+    } else {
+        unsigned int j;
+
+        for (j = 0; j < e->numFields; j++) {
+            if (!(load_input(stack, mod, n, e->fields + j))) {
+                ok = 0;
+                break;
+            }
+        }
+        if (!(ok = n->setup(n))) {
+            fprintf(stderr, "Error: stack invalid\n");
+        }
+    }
+    return ok;
+}
+
 int stack_load(struct Stack* stack, struct SNDCFile* file) {
     unsigned int i;
     int ok = 1;
@@ -246,29 +292,15 @@ int stack_load(struct Stack* stack, struct SNDCFile* file) {
     }
 
     for (i = 0; i < file->numEntries && ok; i++) {
-        struct Node* new;
-        const struct Module* mod;
         struct Entry* e = &file->entries[i];
+        struct Node* new;
 
-        if (       !(mod = imported_module_find(stack, e->type))
-                && !(mod = module_find(e->type))) {
-            fprintf(stderr, "Error: %s: no such module\n", e->type);
+        if (!(new = stack_node_new(stack, e->name))) {
+            fprintf(stderr, "Error: stack: can't create new node\n");
             ok = 0;
-        } else if (!(new = stack_node_new_from_module(stack, e->name, mod))) {
-            fprintf(stderr, "Error: can't create new node\n");
+        } else if (!node_load(stack, e, new)) {
+            fprintf(stderr, "Error: stack: can't load node\n");
             ok = 0;
-        } else {
-            unsigned int j;
-
-            for (j = 0; j < e->numFields; j++) {
-                if (!(load_input(stack, mod, new, e->fields + j))) {
-                    ok = 0;
-                    break;
-                }
-            }
-            if (!(ok = new->setup(new))) {
-                fprintf(stderr, "Error: stack invalid\n");
-            }
         }
     }
     if (!ok) stack_free(stack);
