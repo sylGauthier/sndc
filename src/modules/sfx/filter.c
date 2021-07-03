@@ -9,7 +9,6 @@
 #define W_SIZE 2048
 
 static int filter_process(struct Node* n);
-static int filter_setup(struct Node* n);
 
 const struct Module filter = {
     "filter", "Apply filter to input signal",
@@ -24,7 +23,7 @@ const struct Module filter = {
         {"masksize",    DATA_BUFFER,                REQUIRED},
 #endif
     },
-    filter_setup,
+    NULL,
     filter_process,
     NULL
 };
@@ -44,7 +43,7 @@ enum FilterOutput {
     NUM_OUTPUTS
 };
 
-static int filter_setup(struct Node* n) {
+static int filter_valid(struct Node* n) {
     unsigned int i;
     struct Data *in, *out;
 
@@ -93,6 +92,8 @@ static int filter_process(struct Node* n) {
         return 0;
     }
 #endif
+
+    if (!filter_valid(n)) return 0;
 
     in = &n->inputs[INP]->content.buf;
     out = &n->outputs[0]->content.buf;

@@ -6,7 +6,6 @@
 #include <modules/utils.h>
 
 static int mul_process(struct Node* n);
-static int mul_setup(struct Node* n);
 
 const struct Module mul = {
     "mul", "Multiply 2 signals or numbers",
@@ -17,12 +16,12 @@ const struct Module mul = {
     {
         {"out",     DATA_BUFFER,                REQUIRED}
     },
-    mul_setup,
+    NULL,
     mul_process,
     NULL
 };
 
-static int mul_setup(struct Node* n) {
+static int mul_valid(struct Node* n) {
     if (       !data_valid(n->inputs[0], mul.inputs, n->name)
             || !data_valid(n->inputs[1], mul.inputs + 1, n->name)) {
         return 0;
@@ -42,6 +41,8 @@ static int mul_setup(struct Node* n) {
 static int mul_process(struct Node* n) {
     struct Data *in0, *in1, *out;
     unsigned int i;
+
+    if (!mul_valid(n)) return 0;
 
     in0 = n->inputs[0];
     in1 = n->inputs[1];

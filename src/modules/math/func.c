@@ -5,7 +5,6 @@
 #include <sndc.h>
 #include <modules/utils.h>
 
-static int func_setup(struct Node* n);
 static int func_process(struct Node* n);
 
 const struct Module func = {
@@ -22,7 +21,7 @@ const struct Module func = {
     {
         {"out",         DATA_BUFFER,    REQUIRED}
     },
-    func_setup,
+    NULL,
     func_process,
     NULL
 };
@@ -51,7 +50,7 @@ enum FuncType {
     INV
 };
 
-static int func_setup(struct Node* n) {
+static int func_valid(struct Node* n) {
     struct Buffer* out;
 
     GENERIC_CHECK_INPUTS(n, func);
@@ -121,6 +120,8 @@ static void make_inv(struct Buffer* buf, float params[]) {
 static int func_process(struct Node* n) {
     struct Buffer* out = &n->outputs[0]->content.buf;
     float params[3];
+
+    if (!func_valid(n)) return 0;
 
     if (!(out->data = malloc(out->size * sizeof(float)))) {
         return 0;

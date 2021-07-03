@@ -8,7 +8,6 @@
 #include <modules/utils.h>
 
 static int env_process(struct Node* n);
-static int env_setup(struct Node* n);
 
 const struct Module env = {
     "envelop", "Apply envelop to input signal",
@@ -22,7 +21,7 @@ const struct Module env = {
     {
         {"out",         DATA_BUFFER,    REQUIRED}
     },
-    env_setup,
+    NULL,
     env_process,
     NULL
 };
@@ -36,7 +35,7 @@ enum EnvInputType {
     NUM_INPUTS
 };
 
-static int env_setup(struct Node* n) {
+static int env_valid(struct Node* n) {
     unsigned int i;
     struct Data *in, *out;
 
@@ -63,6 +62,8 @@ static int env_process(struct Node* n) {
     unsigned int i, susi, deci, flati;
     float atkt, sust, dect;
     int interp;
+
+    if (!env_valid(n)) return 0;
 
     in = &n->inputs[INP]->content.buf;
     out = &n->outputs[0]->content.buf;

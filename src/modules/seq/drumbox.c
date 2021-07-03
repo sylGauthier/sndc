@@ -5,7 +5,6 @@
 #include <modules/utils.h>
 
 static int drumbox_process(struct Node* n);
-static int drumbox_setup(struct Node* n);
 
 const struct Module drumbox = {
     "drumbox", "Simple drum machine that sequences its input samples",
@@ -32,7 +31,7 @@ const struct Module drumbox = {
     {
         {"out",         DATA_BUFFER,    REQUIRED}
     },
-    drumbox_setup,
+    NULL,
     drumbox_process,
     NULL
 };
@@ -80,7 +79,7 @@ static unsigned int seqlen(const char* seq) {
     return len;
 }
 
-static int drumbox_setup(struct Node* n) {
+static int drumbox_valid(struct Node* n) {
     struct Buffer* out;
     unsigned int i, sl, maxl = 0, rate, divsize;
     float divs, bpm;
@@ -129,6 +128,8 @@ static int drumbox_process(struct Node* n) {
     unsigned int i, dx;
     struct Buffer* out;
     float bpm, divs;
+
+    if (!drumbox_valid(n)) return 0;
 
     out = &n->outputs[0]->content.buf;
 

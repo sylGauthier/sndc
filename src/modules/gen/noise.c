@@ -8,7 +8,6 @@
 #include <modules/utils.h>
 
 static int noise_process(struct Node* n);
-static int noise_setup(struct Node* n);
 
 const struct Module noise = {
     "noise", "Noise generator",
@@ -20,12 +19,12 @@ const struct Module noise = {
     {
         {"out",         DATA_BUFFER,    REQUIRED}
     },
-    noise_setup,
+    NULL,
     noise_process,
     NULL
 };
 
-static int noise_setup(struct Node* n) {
+static int noise_valid(struct Node* n) {
     unsigned int i;
     struct Data* out;
     struct Buffer* buf;
@@ -52,6 +51,8 @@ static int noise_setup(struct Node* n) {
 static int noise_process(struct Node* n) {
     struct Buffer* out;
     unsigned int i, a;
+
+    if (!noise_valid(n)) return 0;
 
     out = &n->outputs[0]->content.buf;
     if (!(out->data = malloc(out->size * sizeof(float)))) {

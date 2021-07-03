@@ -16,7 +16,6 @@
 #define DEF_SPL 44100
 
 static int osc_process(struct Node* n);
-static int osc_setup(struct Node* n);
 
 const struct Module osc = {
     "osc", "A generator for sine, saw and square waves",
@@ -34,7 +33,7 @@ const struct Module osc = {
     {
         {"out",         DATA_BUFFER,                REQUIRED}
     },
-    osc_setup,
+    NULL,
     osc_process,
     NULL
 };
@@ -65,7 +64,7 @@ enum FuncType {
     SAW
 };
 
-static int osc_setup(struct Node* n) {
+static int osc_valid(struct Node* n) {
     struct Buffer* out;
 
     GENERIC_CHECK_INPUTS(n, osc);
@@ -141,6 +140,8 @@ static int osc_process(struct Node* n) {
     float f, s, d, t, amp, aoff, param, *data, wave[RES];
     unsigned int i, size;
     struct Buffer bwave;
+
+    if (!osc_valid(n)) return 0;
 
     bwave.data = wave;
     bwave.size = RES;

@@ -6,7 +6,6 @@
 #include <modules/utils.h>
 
 static int print_process(struct Node* n);
-static int print_setup(struct Node* n);
 
 const struct Module print = {
     "print", "Prints input buffer to specified file for plotting/analysis",
@@ -15,12 +14,12 @@ const struct Module print = {
         {"file",     DATA_STRING,   OPTIONAL},
     },
     {{0}},
-    print_setup,
+    NULL,
     print_process,
     NULL
 };
 
-static int print_setup(struct Node* n) {
+static int print_valid(struct Node* n) {
     if (!data_valid(n->inputs[0], print.inputs, n->name)) return 0;
     if (!data_valid(n->inputs[1], print.inputs + 1, n->name)) return 0;
     return 1;
@@ -30,6 +29,8 @@ static int print_process(struct Node* n) {
     unsigned int i;
     FILE* f;
     struct Buffer* in;
+
+    if (!print_valid(n)) return 0;
 
     if (n->inputs[1]) {
         if (!(f = fopen(n->inputs[1]->content.str, "w"))) {

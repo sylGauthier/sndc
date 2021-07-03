@@ -267,8 +267,8 @@ static int node_load(struct Stack* stack, struct Entry* e, struct Node* n) {
                 break;
             }
         }
-        if (!(ok = n->setup(n))) {
-            fprintf(stderr, "Error: stack invalid\n");
+        if (n->setup && !(ok = n->setup(n))) {
+            fprintf(stderr, "Error: can't setup node\n");
         }
     }
     return ok;

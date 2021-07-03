@@ -7,7 +7,6 @@
 #define OUT 0
 
 static int mix_process(struct Node* n);
-static int mix_setup(struct Node* n);
 
 const struct Module mix = {
     "mix", "Mixer for up to 8 input buffers",
@@ -33,7 +32,7 @@ const struct Module mix = {
     {
         {"out",     DATA_BUFFER,    REQUIRED}
     },
-    mix_setup,
+    NULL,
     mix_process,
     NULL
 };
@@ -60,7 +59,7 @@ enum MixInputType {
     NUM_INPUTS
 };
 
-static int mix_setup(struct Node* n) {
+static int mix_valid(struct Node* n) {
     unsigned int maxSize = 0, i;
 
     GENERIC_CHECK_INPUTS(n, mix);
@@ -92,6 +91,8 @@ static int mix_process(struct Node* n) {
     float* res;
     unsigned int sizes[8] = {0}, i;
     unsigned int size = 0;
+
+    if (!mix_valid(n)) return 0;
 
     for (i = 0; i < 8; i++) {
         if (n->inputs[IN0 + i]) {
