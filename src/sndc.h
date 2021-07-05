@@ -56,12 +56,15 @@ struct Node {
     int (*teardown)(struct Node* node);
 
     const char* name;
+    const char* path;
+    char isSetup;
     const struct Module* module;
     void* data;
 };
 
 void node_init(struct Node* node);
 void node_free(struct Node* node);
+void node_flush_output(struct Node* node);
 
 
 struct DataDesc {
@@ -103,6 +106,8 @@ struct Stack {
     struct Data** data;
     struct Node** nodes;
     unsigned int numNodes, numData, numImports;
+
+    char* path;
 };
 
 void stack_init(struct Stack* stack);

@@ -17,6 +17,7 @@ void node_init(struct Node* node) {
     node->setup = NULL;
     node->process = NULL;
     node->teardown = NULL;
+    node->isSetup = 0;
 }
 
 void node_free(struct Node* node) {
@@ -25,6 +26,14 @@ void node_free(struct Node* node) {
             node->teardown(node);
         }
         free((char*)node->name);
+    }
+}
+
+void node_flush_output(struct Node* node) {
+    unsigned int i;
+
+    for (i = 0; i < MAX_OUTPUTS; i++) {
+        data_free(node->outputs[i]);
     }
 }
 
@@ -40,11 +49,6 @@ void stack_init(struct Stack* stack) {
 void stack_free(struct Stack* stack) {
     unsigned int i;
 
-    for (i = 0; i < stack->numImports; i++) {
-        module_free_import(stack->imports[i]);
-        free(stack->imports[i]);
-    }
-    free(stack->imports);
     for (i = 0; i < stack->numNodes; i++) {
         node_free(stack->nodes[i]);
         free(stack->nodes[i]);
@@ -55,6 +59,12 @@ void stack_free(struct Stack* stack) {
         free(stack->data[i]);
     }
     free(stack->data);
+    for (i = 0; i < stack->numImports; i++) {
+        module_free_import(stack->imports[i]);
+        free(stack->imports[i]);
+    }
+    free(stack->imports);
+    free(stack->path);
 }
 
 struct Node* stack_node_new(struct Stack* stack, const char* name) {
@@ -214,6 +224,7 @@ static int load_input(struct Stack* stack,
                     n->inputs[slot] = r->outputs[refslot];
                     return 1;
                 }
+                break;
             case FIELD_NODE:
                 if ((d = stack_data_new(stack))) {
                     d->type = DATA_NODE;
@@ -251,6 +262,8 @@ static int node_load(struct Stack* stack, struct Entry* e, struct Node* n) {
     const struct Module* mod;
     int ok = 1;
 
+    n->path = stack->path;
+
     if (       !(mod = imported_module_find(stack, e->type))
             && !(mod = module_find(e->type))) {
         fprintf(stderr, "Error: %s: no such module\n", e->type);
@@ -267,9 +280,6 @@ static int node_load(struct Stack* stack, struct Entry* e, struct Node* n) {
                 break;
             }
         }
-        if (n->setup && !(ok = n->setup(n))) {
-            fprintf(stderr, "Error: can't setup node\n");
-        }
     }
     return ok;
 }
@@ -277,6 +287,11 @@ static int node_load(struct Stack* stack, struct Entry* e, struct Node* n) {
 int stack_load(struct Stack* stack, struct SNDCFile* file) {
     unsigned int i;
     int ok = 1;
+
+    if (!(stack->path = str_cpy(file->path))) {
+        fprintf(stderr, "Error: stack: can't copy path\n");
+        return 0;
+    }
 
     for (i = 0; i < file->numImport; i++) {
         struct Import* imp = file->imports + i;
@@ -300,6 +315,9 @@ int stack_load(struct Stack* stack, struct SNDCFile* file) {
             ok = 0;
         } else if (!node_load(stack, e, new)) {
             fprintf(stderr, "Error: stack: can't load node\n");
+            ok = 0;
+        } else if (!new->isSetup && new->setup && !new->setup(new)) {
+            fprintf(stderr, "Error: stack: can't setup node\n");
             ok = 0;
         }
     }

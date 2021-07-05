@@ -9,18 +9,24 @@ void data_init(struct Data* data) {
 }
 
 void data_free(struct Data* data) {
-    switch (data->type) {
-        case DATA_BUFFER:
-            free(data->content.buf.data);
-            return;
-        case DATA_STRING:
-            free(data->content.str);
-            return;
-        case DATA_NODE:
-            node_free(data->content.node);
-            free(data->content.node);
-            return;
-        default:
-            return;
+    if (data) {
+        switch (data->type) {
+            case DATA_BUFFER:
+                free(data->content.buf.data);
+                data->content.buf.data = NULL;
+                data->content.buf.size = 0;
+                return;
+            case DATA_STRING:
+                free(data->content.str);
+                data->content.str = NULL;
+                return;
+            case DATA_NODE:
+                node_free(data->content.node);
+                free(data->content.node);
+                data->content.node = NULL;
+                return;
+            default:
+                return;
+        }
     }
 }

@@ -76,6 +76,7 @@ static int import_setup(struct Node* node) {
         free(stack);
         node->data = NULL;
     }
+    node->isSetup = 1;
     return ok;
 }
 
