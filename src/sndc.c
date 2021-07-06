@@ -14,32 +14,49 @@ static void list_modules() {
     }
 }
 
+static void print_type(int type) {
+    char* sep = "";
+
+    if (!type) {
+        printf("UNKOWN");
+        return;
+    }
+    if (type & DATA_BUFFER) {
+        printf("%sBUFFER", sep);
+        sep = " | ";
+    }
+    if (type & DATA_FLOAT) {
+        printf("%sFLOAT", sep);
+        sep = " | ";
+    }
+    if (type & DATA_STRING) {
+        printf("%sSTRING", sep);
+        sep = " | ";
+    }
+    if (type & DATA_NODE) {
+        printf("%sNODE", sep);
+        sep = " | ";
+    }
+}
+
 static void print_module(const struct Module* module) {
     unsigned int i;
     printf("%s - %s\n", module->name, module->desc);
     printf("Inputs:\n");
     for (i = 0; i < MAX_INPUTS; i++) {
         if (module->inputs[i].name) {
-            char* sep = "";
             printf("    %s [", module->inputs[i].name);
-            if (!module->inputs[i].type) {
-                printf("UNKOWN");
-            } else {
-                if (module->inputs[i].type & DATA_BUFFER) {
-                    printf("%sBUFFER", sep);
-                    sep = " | ";
-                }
-                if (module->inputs[i].type & DATA_FLOAT) {
-                    printf("%sFLOAT", sep);
-                    sep = " | ";
-                }
-                if (module->inputs[i].type & DATA_STRING) {
-                    printf("%sSTRING", sep);
-                    sep = " | ";
-                }
-            }
+            print_type(module->inputs[i].type);
             printf("] [%s]\n", module->inputs[i].req ?
                                "REQUIRED" : "OPTIONAL");
+        }
+    }
+    printf("Outputs:\n");
+    for (i = 0; i < MAX_OUTPUTS; i++) {
+        if (module->outputs[i].name) {
+            printf("    %s [", module->outputs[i].name);
+            print_type(module->outputs[i].type);
+            printf("]\n");
         }
     }
 }
