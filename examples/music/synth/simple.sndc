@@ -1,0 +1,13 @@
+export input base.duration as sustain;
+export input base.freq as frequency;
+export input base.amplitude as velocity;
+
+export input base.function as shape;
+
+export output base.out as out;
+
+base: osc {
+    function: "sin";
+    duration: 1;
+    freq: 440;
+}

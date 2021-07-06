@@ -1,0 +1,39 @@
+import "synth/simple.sndc" as simple;
+import "drumkit/kick.sndc" as kick;
+import "drumkit/snare.sndc" as snare;
+
+bpm: add {
+    input0: 120;
+    input1: 0;
+}
+
+k: keyboard {
+    bpm: bpm.out;
+    divs: 4;
+
+    instrument: simple {
+        shape: "saw";
+    };
+    file: "melody.sndk";
+}
+
+kick: kick {}
+snare: snare{}
+
+drum: drumbox {
+    bpm: bpm.out;
+    divs: 4;
+
+    sample0: kick.out;
+    sample1: snare.out;
+
+    seq0: "x--- x--- x--- x--- | x--- x--- x-x- x--- | x--- x--- x--- x--- | x--- x--- x-x- x---";
+    seq1: "---- x--- ---- x--- | ---- x-x- ---- x-xx | ---- x--- ---- x--- | ---- x-xx ---- x-xx";
+}
+
+mixer: mix {
+    input0: k.out;
+    input1: drum.out;
+
+    gain1: 0.5;
+}
