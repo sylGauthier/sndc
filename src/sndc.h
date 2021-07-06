@@ -108,6 +108,7 @@ struct Stack {
     unsigned int numNodes, numData, numImports;
 
     char* path;
+    char verbose;
 };
 
 void stack_init(struct Stack* stack);

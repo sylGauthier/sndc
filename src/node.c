@@ -44,6 +44,7 @@ void stack_init(struct Stack* stack) {
     stack->numNodes = 0;
     stack->numData = 0;
     stack->numImports = 0;
+    stack->verbose = 0;
 }
 
 void stack_free(struct Stack* stack) {
@@ -157,7 +158,9 @@ int stack_process(struct Stack* stack) {
     unsigned int i;
 
     for (i = 0; i < stack->numNodes; i++) {
-        fprintf(stderr, "Processing %s\n", stack->nodes[i]->name);
+        if (stack->verbose) {
+            fprintf(stderr, "Processing %s\n", stack->nodes[i]->name);
+        }
         if (!stack->nodes[i]->process(stack->nodes[i])) {
             fprintf(stderr, "Error: processing failed\n");
             return 0;

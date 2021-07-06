@@ -147,6 +147,7 @@ int main(int argc, char** argv) {
 
     init_path();
     stack_init(&s);
+    s.verbose = 1;
     if (!(sndcInit = parse_sndc(&file, argv[1]))) {
         fprintf(stderr, "Error: parsing failed\n");
     } else if (!(stackInit = stack_load(&s, &file))) {
