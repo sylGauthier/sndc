@@ -8,6 +8,7 @@ extern const struct Module add;
 extern const struct Module mul;
 extern const struct Module func;
 extern const struct Module drumbox;
+extern const struct Module keyboard;
 
 const struct Module* modules[] = {
     &osc,
@@ -20,5 +21,6 @@ const struct Module* modules[] = {
     &mul,
     &func,
     &drumbox,
+    &keyboard,
     NULL
 };
