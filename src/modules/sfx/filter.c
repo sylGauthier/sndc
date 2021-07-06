@@ -87,13 +87,16 @@ static int filter_process(struct Node* n) {
     unsigned int i, ms;
 #ifdef DEBUG
     struct Buffer* outmask = &n->outputs[MSK]->content.buf;
+#endif
 
+    if (!filter_valid(n)) {
+        return 0;
+    }
+#ifdef DEBUG
     if (!(outmask->data = malloc(outmask->size * sizeof(float)))) {
         return 0;
     }
 #endif
-
-    if (!filter_valid(n)) return 0;
 
     in = &n->inputs[INP]->content.buf;
     out = &n->outputs[0]->content.buf;
