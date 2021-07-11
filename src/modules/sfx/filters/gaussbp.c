@@ -10,8 +10,8 @@
 
 static int filter_process(struct Node* n);
 
-const struct Module filter = {
-    "filter", "Apply filter to input signal",
+const struct Module gaussbp = {
+    "gaussbp", "Apply filter to input signal",
     {
         {"in",          DATA_BUFFER,                REQUIRED},
         {"lfcutoff",    DATA_FLOAT | DATA_BUFFER,   REQUIRED},
@@ -48,7 +48,7 @@ static int filter_valid(struct Node* n) {
     struct Data *in, *out;
 
     for (i = 0; i < NUM_INPUTS; i++) {
-        if (!data_valid(n->inputs[i], filter.inputs + i, n->name)) {
+        if (!data_valid(n->inputs[i], gaussbp.inputs + i, n->name)) {
             return 0;
         }
     }

@@ -13,7 +13,7 @@ lfo: osc {
     a_offset: 1000;
 }
 
-f: filter {
+f: gaussbp {
     in: wave.out;
     lfcutoff: lfo.out;
     hfcutoff: 0;

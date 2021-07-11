@@ -31,10 +31,9 @@ fenv: func {
     param2: -2.;
 }
 
-f: filter {
+f: simplelp {
     in: wav.out;
-    lfcutoff: 0;
-    hfcutoff: fenv.out;
+    cutoff: fenv.out;
 }
 
 env: envelop {
