@@ -25,6 +25,7 @@ static int keyboard_setup(struct Node* n);
 static int keyboard_process(struct Node* n);
 static int keyboard_teardown(struct Node* n);
 
+/* DECLARE_MODULE(keyboard) */
 const struct Module keyboard = {
     "keyboard", "Melodic sequencer for a given intrument node",
     {

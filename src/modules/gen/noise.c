@@ -9,6 +9,7 @@
 
 static int noise_process(struct Node* n);
 
+/* DECLARE_MODULE(noise) */
 const struct Module noise = {
     "noise", "Noise generator",
     {

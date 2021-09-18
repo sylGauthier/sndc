@@ -8,6 +8,7 @@
 
 static int filter_process(struct Node* n);
 
+/* DECLARE_MODULE(simplelp) */
 const struct Module simplelp = {
     "simplelp", "Apply filter to input signal",
     {

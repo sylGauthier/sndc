@@ -8,6 +8,7 @@
 
 static int mix_process(struct Node* n);
 
+/* DECLARE_MODULE(mix) */
 const struct Module mix = {
     "mix", "Mixer for up to 8 input buffers",
     {

@@ -10,6 +10,7 @@
 
 static int filter_process(struct Node* n);
 
+/* DECLARE_MODULE(gaussbp) */
 const struct Module gaussbp = {
     "gaussbp", "Apply filter to input signal",
     {

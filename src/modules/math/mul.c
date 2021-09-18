@@ -7,6 +7,7 @@
 
 static int mul_process(struct Node* n);
 
+/* DECLARE_MODULE(mul) */
 const struct Module mul = {
     "mul", "Multiply 2 signals or numbers",
     {

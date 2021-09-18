@@ -9,6 +9,7 @@
 
 static int env_process(struct Node* n);
 
+/* DECLARE_MODULE(env) */
 const struct Module env = {
     "envelop", "Apply envelop to input signal",
     {

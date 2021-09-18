@@ -7,6 +7,7 @@
 
 static int add_process(struct Node* n);
 
+/* DECLARE_MODULE(add) */
 const struct Module add = {
     "add", "Add 2 signals or numbers",
     {

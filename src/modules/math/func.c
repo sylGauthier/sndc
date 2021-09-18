@@ -7,6 +7,7 @@
 
 static int func_process(struct Node* n);
 
+/* DECLARE_MODULE(func) */
 const struct Module func = {
     "func", "A generator for simple mathematical functions",
     {
