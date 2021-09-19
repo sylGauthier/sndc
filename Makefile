@@ -1,10 +1,15 @@
 #DEBUG := 1
 
+DEPS := fftw3f
+
 PREFIX ?= /usr/local
 BINDIR ?= bin
 
 CFLAGS ?= -std=c89 -pedantic -march=native -Wall -Wno-unused-function $(if $(DEBUG),-g -DDEBUG,-O3) -Isrc -D_POSIX_C_SOURCE=200112L
+CFLAGS += $(shell pkg-config --cflags $(DEPS))
+
 LDFLAGS += -lm
+LDFLAGS += $(shell pkg-config --libs $(DEPS))
 
 MODSRC := $(shell find src/modules -name *.c)
 MODLIST := src/modules.h

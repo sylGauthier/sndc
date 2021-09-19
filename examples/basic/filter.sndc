@@ -1,20 +1,25 @@
-wave: osc {
+tune: osc {
     function: "saw";
+    freq: 200;
     duration: 10;
-    freq: 440;
+}
+
+whiten: noise {
+    duration: 10;
 }
 
 lfo: osc {
     function: "sin";
     duration: 1;
-    freq: 1;
+    freq: 10;
 
-    amplitude: 1500;
+    amplitude: 500;
     a_offset: 1000;
 }
 
-f: gaussbp {
-    in: wave.out;
-    lfcutoff: lfo.out;
-    hfcutoff: 0;
+f: fftbp {
+    in: tune.out;
+    cutoff: lfo.out;
+    mode: "lowpass";
+    order: 8;
 }
