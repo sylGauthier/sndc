@@ -10,7 +10,7 @@ static int filter_process(struct Node* n);
 
 /* DECLARE_MODULE(simplelp) */
 const struct Module simplelp = {
-    "simplelp", "Apply filter to input signal",
+    "simplelp", "Low pass filter using simple and fast diff equation",
     {
         {"in",          DATA_BUFFER,                REQUIRED},
         {"cutoff",      DATA_FLOAT | DATA_BUFFER,   REQUIRED}
