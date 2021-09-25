@@ -52,12 +52,9 @@ static void print_module(const struct Module* module) {
     printf("Inputs:\n");
     for (i = 0; i < MAX_INPUTS; i++) {
         if (module->inputs[i].name) {
-            int l = strlen(module->inputs[i].name);
-            printf("    %s", module->inputs[i].name);
-            for (; l <= MAX_MOD_NAME_LEN; l++) putc(' ', stdout);
-            l = print_type(module->inputs[i].type);
-            for (; l <= 20; l++) putc(' ', stdout);
-            printf("[%s]    %s\n",
+            printf("    %s ", module->inputs[i].name);
+            print_type(module->inputs[i].type);
+            printf(" [%s]\n        %s\n",
                     module->inputs[i].req ? "REQUIRED" : "OPTIONAL",
                     module->inputs[i].description);
         }
