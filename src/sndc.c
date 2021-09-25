@@ -14,29 +14,36 @@ static void list_modules() {
     }
 }
 
-static void print_type(int type) {
+static int print_type(int type) {
     char* sep = "";
+    int l = 2;
 
+    putc('[', stdout);
     if (!type) {
         printf("UNKOWN");
-        return;
+        l += 6;
     }
     if (type & DATA_BUFFER) {
-        printf("%sBUFFER", sep);
+        printf("BUFFER");
+        l += 6;
         sep = " | ";
     }
     if (type & DATA_FLOAT) {
         printf("%sFLOAT", sep);
+        l += 5 + strlen(sep);
         sep = " | ";
     }
     if (type & DATA_STRING) {
         printf("%sSTRING", sep);
+        l += 6 + strlen(sep);
         sep = " | ";
     }
     if (type & DATA_NODE) {
         printf("%sNODE", sep);
-        sep = " | ";
+        l += 4 + strlen(sep);
     }
+    putc(']', stdout);
+    return l;
 }
 
 static void print_module(const struct Module* module) {
@@ -45,18 +52,22 @@ static void print_module(const struct Module* module) {
     printf("Inputs:\n");
     for (i = 0; i < MAX_INPUTS; i++) {
         if (module->inputs[i].name) {
-            printf("    %s [", module->inputs[i].name);
-            print_type(module->inputs[i].type);
-            printf("] [%s]\n", module->inputs[i].req ?
-                               "REQUIRED" : "OPTIONAL");
+            int l = strlen(module->inputs[i].name);
+            printf("    %s", module->inputs[i].name);
+            for (; l <= MAX_MOD_NAME_LEN; l++) putc(' ', stdout);
+            l = print_type(module->inputs[i].type);
+            for (; l <= 20; l++) putc(' ', stdout);
+            printf("[%s]    %s\n",
+                    module->inputs[i].req ? "REQUIRED" : "OPTIONAL",
+                    module->inputs[i].description);
         }
     }
     printf("Outputs:\n");
     for (i = 0; i < MAX_OUTPUTS; i++) {
         if (module->outputs[i].name) {
-            printf("    %s [", module->outputs[i].name);
+            printf("    %s ", module->outputs[i].name);
             print_type(module->outputs[i].type);
-            printf("]\n");
+            printf(" %s\n", module->outputs[i].description);
         }
     }
 }

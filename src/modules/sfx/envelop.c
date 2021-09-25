@@ -13,14 +13,25 @@ static int env_process(struct Node* n);
 const struct Module env = {
     "envelop", "Apply envelop to input signal",
     {
-        {"in",          DATA_BUFFER,    REQUIRED},
-        {"attack",      DATA_FLOAT,     REQUIRED},
-        {"sustain",     DATA_FLOAT,     REQUIRED},
-        {"decay",       DATA_FLOAT,     REQUIRED},
-        {"interp",      DATA_STRING,    OPTIONAL}
+        {"in",          DATA_BUFFER,    REQUIRED,
+                        "input buffer upon which to apply envelop"},
+
+        {"attack",      DATA_FLOAT,     REQUIRED,
+                        "attack delay in seconds"},
+
+        {"sustain",     DATA_FLOAT,     REQUIRED,
+                        "sustain delay in seconds"},
+
+        {"decay",       DATA_FLOAT,     REQUIRED,
+                        "decay delay in seconds"},
+
+        {"interp",      DATA_STRING,    OPTIONAL,
+                        "interpolation for envelop curve, "
+                        "'step', 'linear' or 'sine', def 'linear'"}
     },
     {
-        {"out",         DATA_BUFFER,    REQUIRED}
+        {"out",         DATA_BUFFER,    REQUIRED,
+                        "output buffer"}
     },
     NULL,
     env_process,

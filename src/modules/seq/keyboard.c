@@ -29,15 +29,22 @@ static int keyboard_teardown(struct Node* n);
 const struct Module keyboard = {
     "keyboard", "Melodic sequencer for a given intrument node",
     {
-        {"instrument",  DATA_NODE,      REQUIRED},
+        {"instrument",  DATA_NODE,      REQUIRED,
+                        "the instrument node, "
+                        "a previously declared or imported node"},
 
-        {"bpm",         DATA_FLOAT,     REQUIRED},
-        {"divs",        DATA_FLOAT,     OPTIONAL},
+        {"bpm",         DATA_FLOAT,     REQUIRED,
+                        "tempo in beats per minute"},
 
-        {"file",        DATA_STRING,    REQUIRED},
+        {"divs",        DATA_FLOAT,     OPTIONAL,
+                        "number of subdivisions in a beat"},
+
+        {"file",        DATA_STRING,    REQUIRED,
+                        "input melody file, see manual for format"},
     },
     {
-        {"out",         DATA_BUFFER,    REQUIRED}
+        {"out",         DATA_BUFFER,    REQUIRED,
+                        "output buffer, full sequence, sampled at 44100Hz"}
     },
     keyboard_setup,
     keyboard_process,

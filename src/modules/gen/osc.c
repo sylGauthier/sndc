@@ -21,18 +21,38 @@ static int osc_process(struct Node* n);
 const struct Module osc = {
     "osc", "A generator for sine, saw and square waves",
     {
-        {"function",    DATA_STRING,                REQUIRED},
-        {"freq",        DATA_FLOAT | DATA_BUFFER,   REQUIRED},
-        {"amplitude",   DATA_FLOAT | DATA_BUFFER,   OPTIONAL},
-        {"p_offset",    DATA_FLOAT,                 OPTIONAL},
-        {"a_offset",    DATA_FLOAT,                 OPTIONAL},
-        {"param",       DATA_FLOAT,                 OPTIONAL},
-        {"duration",    DATA_FLOAT,                 REQUIRED},
-        {"sampling",    DATA_FLOAT,                 OPTIONAL},
-        {"interp",      DATA_STRING,                OPTIONAL}
+        {"function",    DATA_STRING,                REQUIRED,
+                        "waveform: 'sin', 'square' or 'saw'"},
+
+        {"freq",        DATA_FLOAT | DATA_BUFFER,   REQUIRED,
+                        "frequency in Hz"},
+
+        {"amplitude",   DATA_FLOAT | DATA_BUFFER,   OPTIONAL,
+                        "amplitude in unit"},
+
+        {"p_offset",    DATA_FLOAT,                 OPTIONAL,
+                        "period offset, in period (1. = full period)"},
+
+        {"a_offset",    DATA_FLOAT,                 OPTIONAL,
+                        "amplitude offset, a constant that gets "
+                        "added to the resulting signal"},
+
+        {"param",       DATA_FLOAT,                 OPTIONAL,
+                        "the wave parameter, relevant for 'square' and 'saw'"},
+
+        {"duration",    DATA_FLOAT,                 REQUIRED,
+                        "duration of resulting signal in seconds"},
+
+        {"sampling",    DATA_FLOAT,                 OPTIONAL,
+                        "sampling rate, def 44100Hz"},
+
+        {"interp",      DATA_STRING,                OPTIONAL,
+                        "interpolation of the resulting buffer, "
+                        "'step', 'linear' or 'sine'"}
     },
     {
-        {"out",         DATA_BUFFER,                REQUIRED}
+        {"out",         DATA_BUFFER,                REQUIRED,
+                        "output signal"}
     },
     NULL,
     osc_process,

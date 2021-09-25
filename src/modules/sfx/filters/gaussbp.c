@@ -14,14 +14,21 @@ static int filter_process(struct Node* n);
 const struct Module gaussbp = {
     "gaussbp", "Band pass filter using gaussian convolution",
     {
-        {"in",          DATA_BUFFER,                REQUIRED},
-        {"lfcutoff",    DATA_FLOAT | DATA_BUFFER,   REQUIRED},
-        {"hfcutoff",    DATA_FLOAT | DATA_BUFFER,   REQUIRED}
+        {"in",          DATA_BUFFER,                REQUIRED,
+                        "input buffer to be filtered"},
+
+        {"lfcutoff",    DATA_FLOAT | DATA_BUFFER,   REQUIRED,
+                        "low frequency cutoff"},
+
+        {"hfcutoff",    DATA_FLOAT | DATA_BUFFER,   REQUIRED,
+                        "high frequency cutoff"}
     },
     {
-        {"out",         DATA_BUFFER,                REQUIRED},
+        {"out",         DATA_BUFFER,                REQUIRED,
+                        "output, filtered buffer"},
 #ifdef DEBUG
-        {"masksize",    DATA_BUFFER,                REQUIRED},
+        {"masksize",    DATA_BUFFER,                REQUIRED,
+                        "debug: buffer of mask size"},
 #endif
     },
     NULL,

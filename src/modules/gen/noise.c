@@ -13,12 +13,18 @@ static int noise_process(struct Node* n);
 const struct Module noise = {
     "noise", "Noise generator",
     {
-        {"duration",    DATA_FLOAT,     REQUIRED},
-        {"sampling",    DATA_FLOAT,     OPTIONAL},
-        {"interp",      DATA_STRING,    OPTIONAL}
+        {"duration",    DATA_FLOAT,     REQUIRED,
+                        "duration of resulting signal"},
+
+        {"sampling",    DATA_FLOAT,     OPTIONAL,
+                        "sampling rate, def 44100Hz"},
+
+        {"interp",      DATA_STRING,    OPTIONAL,
+                        "interpolation of resulting buffer, "
+                        "'step', 'linear' or 'sine'"}
     },
     {
-        {"out",         DATA_BUFFER,    REQUIRED}
+        {"out",         DATA_BUFFER,    REQUIRED, "output signal"}
     },
     NULL,
     noise_process,

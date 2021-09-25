@@ -11,11 +11,11 @@ static int add_process(struct Node* n);
 const struct Module add = {
     "add", "Add 2 signals or numbers",
     {
-        {"input0",  DATA_BUFFER | DATA_FLOAT,   REQUIRED},
-        {"input1",  DATA_BUFFER | DATA_FLOAT,   REQUIRED},
+        {"input0",  DATA_BUFFER | DATA_FLOAT,   REQUIRED, "input #0"},
+        {"input1",  DATA_BUFFER | DATA_FLOAT,   REQUIRED, "input #1"},
     },
     {
-        {"out",     DATA_BUFFER,                REQUIRED}
+        {"out",     DATA_BUFFER,                REQUIRED, "sum of inputs"}
     },
     NULL,
     add_process,

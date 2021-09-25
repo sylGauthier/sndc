@@ -12,11 +12,15 @@ static int filter_process(struct Node* n);
 const struct Module simplelp = {
     "simplelp", "Low pass filter using simple and fast diff equation",
     {
-        {"in",          DATA_BUFFER,                REQUIRED},
-        {"cutoff",      DATA_FLOAT | DATA_BUFFER,   REQUIRED}
+        {"in",          DATA_BUFFER,                REQUIRED,
+                        "input buffer to be filtered"},
+
+        {"cutoff",      DATA_FLOAT | DATA_BUFFER,   REQUIRED,
+                        "frequency cutoff"}
     },
     {
-        {"out",         DATA_BUFFER,                REQUIRED},
+        {"out",         DATA_BUFFER,                REQUIRED,
+                        "output, filtered buffer"},
     },
     NULL,
     filter_process,

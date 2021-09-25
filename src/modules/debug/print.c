@@ -11,8 +11,8 @@ static int print_process(struct Node* n);
 const struct Module print = {
     "print", "Prints input buffer to specified file for plotting/analysis",
     {
-        {"in",       DATA_BUFFER,   REQUIRED},
-        {"file",     DATA_STRING,   OPTIONAL},
+        {"in",       DATA_BUFFER,   REQUIRED, "input buffer"},
+        {"file",     DATA_STRING,   OPTIONAL, "output file name"},
     },
     {{0}},
     NULL,

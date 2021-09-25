@@ -10,27 +10,33 @@ static int drumbox_process(struct Node* n);
 const struct Module drumbox = {
     "drumbox", "Simple drum machine that sequences its input samples",
     {
-        {"bpm",         DATA_FLOAT,     REQUIRED},
-        {"divs",        DATA_FLOAT,     OPTIONAL},
+        {"bpm",         DATA_FLOAT,     REQUIRED,
+                        "tempo in beats per minute"},
+        {"divs",        DATA_FLOAT,     OPTIONAL,
+                        "number of subdivision per beat, def 4"},
 
-        {"sample0",     DATA_BUFFER,    REQUIRED},
-        {"sample1",     DATA_BUFFER,    OPTIONAL},
-        {"sample2",     DATA_BUFFER,    OPTIONAL},
-        {"sample3",     DATA_BUFFER,    OPTIONAL},
-        {"sample4",     DATA_BUFFER,    OPTIONAL},
-        {"sample5",     DATA_BUFFER,    OPTIONAL},
-        {"sample6",     DATA_BUFFER,    OPTIONAL},
+        {"sample0",     DATA_BUFFER,    REQUIRED, "sample #0"},
+        {"sample1",     DATA_BUFFER,    OPTIONAL, "sample #1"},
+        {"sample2",     DATA_BUFFER,    OPTIONAL, "sample #2"},
+        {"sample3",     DATA_BUFFER,    OPTIONAL, "sample #3"},
+        {"sample4",     DATA_BUFFER,    OPTIONAL, "sample #4"},
+        {"sample5",     DATA_BUFFER,    OPTIONAL, "sample #5"},
+        {"sample6",     DATA_BUFFER,    OPTIONAL, "sample #6"},
 
-        {"seq0",        DATA_STRING,    REQUIRED},
-        {"seq1",        DATA_STRING,    OPTIONAL},
-        {"seq2",        DATA_STRING,    OPTIONAL},
-        {"seq3",        DATA_STRING,    OPTIONAL},
-        {"seq4",        DATA_STRING,    OPTIONAL},
-        {"seq5",        DATA_STRING,    OPTIONAL},
-        {"seq6",        DATA_STRING,    OPTIONAL},
+        {"seq0",        DATA_STRING,    REQUIRED,
+                        "sequence #0, "
+                        "an 'x' triggers sample0, "
+                        "a '-' indicates a silent beat, "
+                        "all other characters are ignored"},
+        {"seq1",        DATA_STRING,    OPTIONAL, "sequence #1"},
+        {"seq2",        DATA_STRING,    OPTIONAL, "sequence #2"},
+        {"seq3",        DATA_STRING,    OPTIONAL, "sequence #3"},
+        {"seq4",        DATA_STRING,    OPTIONAL, "sequence #4"},
+        {"seq5",        DATA_STRING,    OPTIONAL, "sequence #5"},
+        {"seq6",        DATA_STRING,    OPTIONAL, "sequence #6"},
     },
     {
-        {"out",         DATA_BUFFER,    REQUIRED}
+        {"out",         DATA_BUFFER,    REQUIRED, "output full sequence"}
     },
     NULL,
     drumbox_process,

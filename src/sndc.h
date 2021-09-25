@@ -3,11 +3,12 @@
 #ifndef SDNC_H
 #define SDNC_H
 
-#define MAX_INPUTS      16
-#define MAX_OUTPUTS     16
+#define MAX_INPUTS          16
+#define MAX_OUTPUTS         16
 
-#define MAX_SNDC_PATH   16
-#define MAX_PATH_LENGTH 128
+#define MAX_SNDC_PATH       16
+#define MAX_PATH_LENGTH     128
+#define MAX_MOD_NAME_LEN    16
 
 extern char sndcPath[MAX_SNDC_PATH][MAX_PATH_LENGTH];
 
@@ -74,6 +75,7 @@ struct DataDesc {
         OPTIONAL = 0,
         REQUIRED
     } req;
+    const char* description;
 };
 
 struct SNDCFile;
@@ -93,7 +95,6 @@ struct Module {
 
 extern const struct Module* modules[];
 
-int module_load_all();
 const struct Module* module_find(const char* name);
 int module_get_input_slot(const struct Module* module, const char* name);
 int module_get_output_slot(const struct Module* module, const char* name);

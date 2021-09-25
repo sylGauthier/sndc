@@ -17,14 +17,26 @@ static int filter_process(struct Node* n);
 const struct Module fftbp = {
     "filter", "Generic lowpass / highpass filter",
     {
-        {"in",          DATA_BUFFER,                REQUIRED},
-        {"cutoff",      DATA_FLOAT | DATA_BUFFER,   REQUIRED},
-        {"mode",        DATA_STRING,                REQUIRED},
-        {"order",       DATA_FLOAT,                 OPTIONAL},
-        {"fftwinsize",  DATA_FLOAT,                 OPTIONAL}
+        {"in",          DATA_BUFFER,                REQUIRED,
+                        "input buffer to be filtered"},
+
+        {"cutoff",      DATA_FLOAT | DATA_BUFFER,   REQUIRED,
+                        "frequency cutoff"},
+
+        {"mode",        DATA_STRING,                REQUIRED,
+                        "filter mode, 'lowpass' or 'highpass'"},
+
+        {"order",       DATA_FLOAT,                 OPTIONAL,
+                        "Butterworth order, preferably an even, "
+                        "positive integer, def '4'"},
+
+        {"fftwinsize",  DATA_FLOAT,                 OPTIONAL,
+                        "FFT window size, def '2048'"}
     },
     {
-        {"out",         DATA_BUFFER,                REQUIRED},
+        {"out",         DATA_BUFFER,                REQUIRED,
+                        "output, filtered buffer, same size and "
+                        "sampling rate as input"},
     },
     NULL,
     filter_process,

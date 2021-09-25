@@ -11,16 +11,27 @@ static int func_process(struct Node* n);
 const struct Module func = {
     "func", "A generator for simple mathematical functions",
     {
-        {"function",    DATA_STRING,    REQUIRED},
-        {"duration",    DATA_FLOAT,     REQUIRED},
-        {"sampling",    DATA_FLOAT,     OPTIONAL},
-        {"interp",      DATA_STRING,    OPTIONAL},
-        {"param0",      DATA_FLOAT,     OPTIONAL},
-        {"param1",      DATA_FLOAT,     OPTIONAL},
-        {"param2",      DATA_FLOAT,     OPTIONAL},
+        {"function",    DATA_STRING,    REQUIRED,
+                        "mathematical function, 'exp', 'lin' or 'inv'"},
+
+        {"duration",    DATA_FLOAT,     REQUIRED,
+                        "duration of resulting signal"},
+
+        {"sampling",    DATA_FLOAT,     OPTIONAL,
+                        "sampling rate of resulting signal"},
+
+        {"interp",      DATA_STRING,    OPTIONAL,
+                        "interpolation of resulting buffer"},
+
+        {"param0",      DATA_FLOAT,     OPTIONAL,
+                        "param 0 for mathematical function"},
+        {"param1",      DATA_FLOAT,     OPTIONAL,
+                        "param 1 for mathematical function"},
+        {"param2",      DATA_FLOAT,     OPTIONAL,
+                        "param 2 for mathematical function"},
     },
     {
-        {"out",         DATA_BUFFER,    REQUIRED}
+        {"out",         DATA_BUFFER,    REQUIRED, "resulting signal"}
     },
     NULL,
     func_process,
