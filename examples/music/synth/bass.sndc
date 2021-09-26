@@ -1,0 +1,57 @@
+export input freq.input0 as frequency;
+export input decay.input1 as sustain;
+export input base.amplitude as velocity;
+
+export input base.param as sharpness;
+export input harmonic_offset.input1 as resonance;
+
+export output result.out as out;
+
+freq: mul {
+    input0: 440;
+    input1: 0.125;
+}
+
+base: osc {
+    function: "saw";
+    duration: 2;
+    freq: freq.out;
+    param: 0.1;
+}
+
+harmonic_decay: func {
+    function: "exp";
+    duration: 1;
+
+    param0: 1000;
+    param2: -20.0;
+}
+
+harmonic_offset: add {
+    input0: harmonic_decay.out;
+    input1: 200;
+}
+
+f: filter {
+    in: base.out;
+    mode: "lowpass";
+    cutoff: harmonic_offset.out;
+}
+
+decay: div {
+    input0: -6.0;
+    input1: 1;
+}
+
+envelop: func {
+    function: "exp";
+    duration: 1;
+
+    param0: 1;
+    param2: decay.out;
+}
+
+result: mul {
+    input0: f.out;
+    input1: envelop.out;
+}
