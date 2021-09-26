@@ -1,44 +1,50 @@
-export input freq.param0 as freq;
-export input freq.param2 as freqdecay;
-export input wav.function as wave;
-export input env.attack as attack;
-export input env.decay as decay;
+export input clickbase.freq as frequency;
+export input decay.param2 as decay;
+export input clickbase.function as shape;
 
-export output env.out as out;
+export output click.out as out;
 
-freq: func {
-    function: "exp";
-    duration: 1;
-    sampling: 100;
-
-    param0: 180;
-    param2: -3.;
-}
-
-wav: osc {
-    function: "square";
-    freq: freq.out;
-    duration: 0.5;
+clickbase: osc {
+    function: "saw";
+    freq: 40;
+    duration: 2;
+    p_offset: 0.;
     amplitude: 1;
 }
 
-fenv: func {
+n: noise {
+    duration: 2;
+}
+
+bang: mix {
+    input0: clickbase.out;
+    input1: n.out;
+
+    gain1: 0.3;
+}
+
+filterdecay: func {
     function: "exp";
     duration: 1;
-    sampling: 10;
-
-    param0: 1000;
+    param0: 400;
     param2: -2.;
 }
 
-f: simplelp {
-    in: wav.out;
-    cutoff: fenv.out;
+fn: filter {
+    mode: "lowpass";
+    cutoff: filterdecay.out;
+    in: bang.out;
 }
 
-env: envelop {
-    in: f.out;
-    attack: 0.01;
-    sustain: 0;
-    decay: 0.3;
+decay: func {
+    function: "exp";
+    duration: 1;
+
+    param0: 1;
+    param2: -20.0;
+}
+
+click: mul {
+    input0: fn.out;
+    input1: decay.out;
 }
