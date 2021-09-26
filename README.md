@@ -83,7 +83,7 @@ A typical invocation of `sndc` piped into `aplay` for immediate replay of the
 sound might look like this:
 
 ```
-$ ./sndc < file.sndc | aplay -c 1 -t raw -r 44100 -f float_le
+$ ./sndc file.sndc | aplay -c 1 -t raw -r 44100 -f float_le
 ```
 
 Note that the `float_le` is specific for little endian machines, big endian
@@ -93,7 +93,7 @@ Similarly, to convert the output into whatever audio format the user desires,
 one should use `sox` with an invocation such as:
 
 ```
-$ ./sndc < file.sndc | sox -t raw -r 44100 -c 1 -L -e floating-point -b 32 - out.wav
+$ ./sndc file.sndc | sox -t raw -r 44100 -c 1 -L -e floating-point -b 32 - out.wav
 ```
 
 ## Notes
