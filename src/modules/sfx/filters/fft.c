@@ -73,27 +73,33 @@ static void make_window(float* win, unsigned int winSize) {
 
 static void load_fftin(float* fftin,
                        float* buf, unsigned int bufSize,
-                       float* win, unsigned int winSize) {
-    unsigned int i, max;
+                       float* win, unsigned int winSize,
+                       int pos) {
+    int i, max;
 
-    max = winSize < bufSize ? winSize : bufSize;
+    max = winSize < bufSize - pos ? winSize : bufSize - pos;
 
-    for (i = 0; i < max; i++) {
-        fftin[i] = win[i] * buf[i];
+    for (i = 0; i + pos < 0; i++) {
+        fftin[i] = 0;
     }
-    for (i = max; i < winSize; i++) {
+    for (; i < max; i++) {
+        fftin[i] = win[i] * buf[i + pos];
+    }
+    for (; i < winSize; i++) {
         fftin[i] = 0;
     }
 }
 
 static void export_fftin(float* fftout,
                          float* buf, unsigned int bufSize,
-                         float* win, unsigned int winSize) {
-    unsigned int i, max;
+                         float* win, unsigned int winSize,
+                         int pos) {
+    int i, max;
 
-    max = winSize < bufSize ? winSize : bufSize;
-    for (i = 0; i < max; i++) {
-        buf[i] += win[i] * fftout[i] / (float) winSize;
+    max = winSize < bufSize - pos ? winSize : bufSize - pos;
+    i = pos < 0 ? -pos : 0;
+    for (; i < max; i++) {
+        buf[i + pos] += win[i] * fftout[i] / (float) winSize;
     }
 }
 
@@ -193,17 +199,17 @@ static int filter_process(struct Node* n) {
             && (forward = fftwf_plan_dft_r2c_1d(winSize, fftin, fftout, 0))
             && (backward = fftwf_plan_dft_c2r_1d(winSize, fftout, fftin, 0))
             && make_butterworth_gain(&gain, order, GAIN_RESOL, mode)) {
-        unsigned int i;
+        int i;
         float f0;
 
         make_window(win, winSize);
-        for (i = 0; i < in->size; i += stride) {
+        for (i = -stride; i < (int) in->size; i += stride) {
             f0 = data_float(cutoffdata, (float) i / (float) in->size, 0);
-            load_fftin(fftin, in->data + i, in->size - i, win, winSize);
+            load_fftin(fftin, in->data, in->size, win, winSize, i);
             fftwf_execute(forward);
             apply_filter(fftout, winSize, in->samplingRate, f0, &gain);
             fftwf_execute(backward);
-            export_fftin(fftin, out->data + i, out->size - i, win, winSize);
+            export_fftin(fftin, out->data, out->size, win, winSize, i);
         }
         ok = 1;
     }
