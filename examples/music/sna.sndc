@@ -1,0 +1,41 @@
+import "synth/bass.sndc" as bass;
+import "drumkit/kick.sndc" as kick;
+import "drumkit/snare.sndc" as snare;
+
+bpm: add {
+    input0: 120;
+    input1: 0;
+}
+
+k: kick {
+    shape: "saw";
+    frequency: 60;
+    decay: -30.;
+}
+
+s: snare{}
+
+kbd: keyboard {
+    bpm: bpm.out;
+    instrument: bass {
+        sharpness: 0.3;
+    };
+    file: "sna.sndk";
+}
+
+drum: drumbox {
+    bpm: bpm.out;
+    sample0: k.out;
+    sample1: s.out;
+
+    seq0: "x--- x--- x--- x--- x--- x--- x--- x---";
+    seq1: "x--- x--- x--- x--- x--- x--- x--- x---";
+}
+
+out: mix {
+    input0: kbd.out;
+    input1: drum.out;
+
+    gain0: 0.7;
+    gain1: 1;
+}
