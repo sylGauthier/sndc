@@ -17,7 +17,7 @@ lfo: osc {
     a_offset: 1000;
 }
 
-f: fftbp {
+f: filter {
     in: tune.out;
     cutoff: lfo.out;
     mode: "lowpass";
