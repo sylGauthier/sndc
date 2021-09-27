@@ -15,11 +15,17 @@ friendly when integrated into a complex project such as a video game.
 
 ## Build
 
+Dependencies:
+
+ - libfftw3
+
 ```
 $ git clone github.com/sylGauthier/sndc.git
 $ cd sndc
 $ make
 ```
+
+You can install `sndc` and its wrappers with `make install`.
 
 ## Write a sound effect source
 
@@ -94,6 +100,21 @@ one should use `sox` with an invocation such as:
 
 ```
 $ ./sndc file.sndc | sox -t raw -r 44100 -c 1 -L -e floating-point -b 32 - out.wav
+```
+
+Some convenient wrappers are located in the `wrappers` directory, they get
+installed along with `sndc` when typing `make install`.
+
+To play a `sndc` file using the wrapper over `aplay`:
+
+```
+$ sndc_play <sndcfile>
+```
+
+To export using the wrapper over `sox`:
+
+```
+$ sndc_export <sndcfile> <audiofile>
 ```
 
 ## Notes
