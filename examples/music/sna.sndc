@@ -9,8 +9,8 @@ bpm: add {
 
 k: kick {
     shape: "saw";
-    frequency: 60;
-    decay: -30.;
+    frequency: 40;
+    decay: -20.;
 }
 
 s: snare{}
@@ -32,10 +32,10 @@ drum: drumbox {
     seq1: "x--- x--- x--- x--- x--- x--- x--- x---";
 }
 
-out: mix {
-    input0: kbd.out;
-    input1: drum.out;
+l: layout {
+    bpm: bpm.out;
+    file: "sna.sndl";
 
-    gain0: 0.7;
-    gain1: 1;
+    sample0: kbd.out;
+    sample1: drum.out;
 }
