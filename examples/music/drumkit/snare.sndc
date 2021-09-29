@@ -80,7 +80,8 @@ amp2: func {
     param2: -30.;
 }
 
-envnoise: mul {
+envnoise: binop {
+    operator: "mul";
     input0: f.out;
     input1: amp2.out;
 }

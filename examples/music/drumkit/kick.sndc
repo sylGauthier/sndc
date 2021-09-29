@@ -44,7 +44,8 @@ decay: func {
     param2: -20.0;
 }
 
-click: mul {
+click: binop {
+    operator: "mul";
     input0: fn.out;
     input1: decay.out;
 }

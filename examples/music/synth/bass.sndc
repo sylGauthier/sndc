@@ -7,7 +7,8 @@ export input harmonic_offset.input1 as resonance;
 
 export output result.out as out;
 
-freq: mul {
+freq: binop {
+    operator: "mul";
     input0: 440;
     input1: 0.125;
 }
@@ -23,11 +24,12 @@ harmonic_decay: func {
     function: "exp";
     duration: 1;
 
-    param0: 1000;
+    param0: 2000;
     param2: -20.0;
 }
 
-harmonic_offset: add {
+harmonic_offset: binop {
+    operator: "add";
     input0: harmonic_decay.out;
     input1: 200;
 }
@@ -38,7 +40,8 @@ f: filter {
     cutoff: harmonic_offset.out;
 }
 
-decay: div {
+decay: binop {
+    operator: "div";
     input0: -6.0;
     input1: 1;
 }
@@ -51,7 +54,8 @@ envelop: func {
     param2: decay.out;
 }
 
-result: mul {
+result: binop {
+    operator: "mul";
     input0: f.out;
     input1: envelop.out;
 }

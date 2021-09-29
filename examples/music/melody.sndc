@@ -2,7 +2,8 @@ import "synth/simple.sndc" as simple;
 import "drumkit/kick.sndc" as kick;
 import "drumkit/snare.sndc" as snare;
 
-bpm: add {
+bpm: binop {
+    operator: "add";
     input0: 120;
     input1: 0;
 }
