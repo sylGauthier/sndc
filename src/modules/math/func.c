@@ -1,34 +1,55 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <math.h>
+#include <string.h>
 
 #include <sndc.h>
 #include <modules/utils.h>
+
+#define FN_STACK_SIZE   128
 
 static int func_process(struct Node* n);
 
 /* DECLARE_MODULE(func) */
 const struct Module func = {
-    "func", "A generator for simple mathematical functions",
+    "func", "A generator for mathematical functions",
     {
-        {"function",    DATA_STRING,    REQUIRED,
-                        "mathematical function, 'exp', 'lin' or 'inv'"},
+        {"expr",        DATA_STRING,    REQUIRED,
+                        "mathematical function in infixe notation\n"
+                        " - use '$s' for position within buffer (0.0 to 1.0)\n"
+                        " - use '$t' for time (0.0 to 'duration')\n"
+                        " - use '$n' for sample number\n"
+                        " - use '$<N>' for param<N>"},
 
         {"duration",    DATA_FLOAT,     REQUIRED,
                         "duration of resulting signal"},
 
         {"sampling",    DATA_FLOAT,     OPTIONAL,
-                        "sampling rate of resulting signal"},
+                        "sampling rate of resulting signal, def 44100"},
 
         {"interp",      DATA_STRING,    OPTIONAL,
-                        "interpolation of resulting buffer"},
+                        "interpolation of resulting buffer, def 'linear'"},
 
-        {"param0",      DATA_FLOAT,     OPTIONAL,
-                        "param 0 for mathematical function"},
-        {"param1",      DATA_FLOAT,     OPTIONAL,
-                        "param 1 for mathematical function"},
-        {"param2",      DATA_FLOAT,     OPTIONAL,
-                        "param 2 for mathematical function"},
+        {"param0",      DATA_FLOAT | DATA_BUFFER,     OPTIONAL,
+                        "param 0 for mathematical function, '$0'"},
+        {"param1",      DATA_FLOAT | DATA_BUFFER,     OPTIONAL,
+                        "param 1 for mathematical function, '$1'"},
+        {"param2",      DATA_FLOAT | DATA_BUFFER,     OPTIONAL,
+                        "param 2 for mathematical function, '$2'"},
+        {"param3",      DATA_FLOAT | DATA_BUFFER,     OPTIONAL,
+                        "param 3 for mathematical function, '$3'"},
+        {"param4",      DATA_FLOAT | DATA_BUFFER,     OPTIONAL,
+                        "param 4 for mathematical function, '$4'"},
+        {"param5",      DATA_FLOAT | DATA_BUFFER,     OPTIONAL,
+                        "param 5 for mathematical function, '$5'"},
+        {"param6",      DATA_FLOAT | DATA_BUFFER,     OPTIONAL,
+                        "param 6 for mathematical function, '$6'"},
+        {"param7",      DATA_FLOAT | DATA_BUFFER,     OPTIONAL,
+                        "param 7 for mathematical function, '$7'"},
+        {"param8",      DATA_FLOAT | DATA_BUFFER,     OPTIONAL,
+                        "param 8 for mathematical function, '$8'"},
+        {"param9",      DATA_FLOAT | DATA_BUFFER,     OPTIONAL,
+                        "param 9 for mathematical function, '$9'"},
     },
     {
         {"out",         DATA_BUFFER,    REQUIRED, "resulting signal"}
@@ -49,36 +70,64 @@ enum InputType {
     NUM_INPUTS
 };
 
-static const char* funcNames[] = {
-    "exp",
-    "lin",
-    "inv",
-    NULL
+enum FnTokenType {
+    FN_NONE = 0,
+
+    FN_LIT,
+    FN_PLUS,
+    FN_MINUS,
+    FN_MULT,
+    FN_DIV,
+    FN_NEG,
+    FN_POW,
+    FN_FUN,
+    FN_OPAR,
+    FN_CPAR,
+
+    FN_S,
+    FN_T,
+    FN_N,
+    FN_I
 };
 
-enum FuncType {
-    EXP = 0,
-    LIN,
-    INV
+const char* tkname[] = {
+    "<none>", "LIT", "PLUS", "MINUS", "MULT", "DIV", "NEG", "POW", "FUN",
+    "OPAR", "CPAR", "REG_S", "REG_T", "REG_N", "REG_I"
 };
 
-static int func_valid(struct Node* n) {
+struct FnMathFunc {
+    const char* name;
+    float (*func)(float);
+};
+
+const struct FnMathFunc functions[] = {
+    {"exp", expf},
+    {"log", logf},
+    {"sqrt", sqrtf},
+
+    {"sin", sinf},
+    {"cos", cosf},
+    {"tan", tanf},
+    {"asin", asinf},
+    {"acos", acosf},
+    {"atan", atanf},
+
+    {NULL, NULL}
+};
+
+struct FnToken {
+    enum FnTokenType type;
+    union FnTokenValue {
+        unsigned int n;
+        float f;
+        float (*func)(float);
+    } val;
+};
+
+static int func_setup(struct Node* n) {
     struct Buffer* out;
 
     GENERIC_CHECK_INPUTS(n, func);
-
-    if (!data_string_valid(n->inputs[FUN],
-                           funcNames,
-                           func.inputs[FUN].name,
-                           n->name)) {
-        return 0;
-    }
-    if (n->inputs[ITP] && !data_string_valid(n->inputs[ITP],
-                                             interpNames,
-                                             func.inputs[ITP].name,
-                                             n->name)) {
-        return 0;
-    }
 
     n->outputs[0]->type = DATA_BUFFER;
     out = &n->outputs[0]->content.buf;
@@ -94,69 +143,265 @@ static int func_valid(struct Node* n) {
     return 1;
 }
 
-static void make_exp(struct Buffer* buf, float params[]) {
-    unsigned int i;
-    float dt = 1. / (float) buf->samplingRate;
-    float t = 0;
-
-    for (i = 0; i < buf->size; i++) {
-        buf->data[i] = params[0] * expf((t + params[1]) * params[2]);
-        t += dt;
-    }
+static void print_token(struct FnToken* tk) {
+    fprintf(stderr, "%s", tkname[tk->type]);
+    if (tk->type == FN_LIT) fprintf(stderr, " = %f", tk->val.f);
+    if (tk->type == FN_I) fprintf(stderr, " [%d]", tk->val.n);
+    fprintf(stderr, "\n");
 }
 
-static void make_lin(struct Buffer* buf, float params[]) {
+static void print_stack(struct FnToken* stack, unsigned int len) {
     unsigned int i;
-    float dt = 1. / (float) buf->samplingRate;
-    float t = 0, duration = (float) buf->size / (float) buf->samplingRate;
-    float a = (params[1] - params[0]) / duration;
-    float b = params[0];
-
-    for (i = 0; i < buf->size; i++) {
-        buf->data[i] = a * t + b;
-        t += dt;
-    }
+    for (i = 0 ; i < len; i++) print_token(stack + i);
 }
 
-static void make_inv(struct Buffer* buf, float params[]) {
+static float (*get_func(const char* f, const char* (*end)))(float) {
+    const char* cur = f;
     unsigned int i;
-    float dt = 1. / (float) buf->samplingRate;
-    float t = 0;
 
-    for (i = 0; i < buf->size; i++) {
-        buf->data[i] = params[0] / (t + params[1]);
-        t += dt;
+    while (*cur >= 'a' && *cur <= 'z') cur++;
+    if (cur == f || *cur != '(') return NULL;
+    for (i = 0; functions[i].name; i++) {
+        if (!strncmp(functions[i].name, f, strlen(functions[i].name))
+                && strlen(functions[i].name) == cur - f) {
+            *end = cur;
+            return functions[i].func;
+        }
     }
+    return NULL;
+}
+
+static const char* next_token(const char* func,
+                              struct FnToken* tk,
+                              struct FnToken* prevtk,
+                              int* err) {
+    const char* end;
+
+    *err = 0;
+    while (func[0] == ' ' || func[0] == '\t') func++;
+    switch (func[0]) {
+        case '\0': return NULL;
+        case '-':
+            if (prevtk->type == FN_LIT || prevtk->type == FN_CPAR) {
+                tk->type = FN_MINUS;
+                return func + 1;
+            }
+            tk->type = FN_NEG;
+            return func + 1;
+        case '+': tk->type = FN_PLUS;   return func + 1;
+        case '*': tk->type = FN_MULT;   return func + 1;
+        case '/': tk->type = FN_DIV;    return func + 1;
+        case '^': tk->type = FN_POW;    return func + 1;
+        case '(': tk->type = FN_OPAR;   return func + 1;
+        case ')': tk->type = FN_CPAR;   return func + 1;
+        case '$':
+            switch (func[1]) {
+                case 's': tk->type = FN_S; return func + 2;
+                case 't': tk->type = FN_T; return func + 2;
+                case 'n': tk->type = FN_N; return func + 2;
+                default: break;
+            }
+            if (func[1] >= '0' && func[1] <= '9') {
+                tk->type = FN_I;
+                tk->val.n = func[1] - '0';
+                return func + 2;
+            }
+            fprintf(stderr, "Error: func: invalid register: %2s\n", func);
+            break;
+        default: break;
+    }
+    if (func[0] >= '0' && func[0] <= '9') {
+        tk->type = FN_LIT;
+        tk->val.f = strtof(func, (char**) &end);
+        return end;
+    }
+    if ((tk->val.func = get_func(func, &end))) {
+        tk->type = FN_FUN;
+        return end;
+    }
+    fprintf(stderr, "Error: func: unknown token: %c\n", func[0]);
+    *err = 1;
+    return NULL;
+}
+
+#define STACK_PUSH(s, v, l) \
+    if ((l) >= FN_STACK_SIZE ) { \
+        fprintf(stderr, "Error: stack size reached: %d\n", FN_STACK_SIZE); \
+        return 0; \
+    } else { \
+        (s)[(l)++] = (v); \
+    }
+#define IS_OP(t) ((t).type >= FN_PLUS && (t).type <= FN_POW)
+#define PREC(t) (((t).type == FN_PLUS || (t).type == FN_MINUS) * 2 \
+               + (    (t).type == FN_MULT \
+                   || (t).type == FN_DIV \
+                   || (t).type == FN_NEG) * 3 \
+               + ((t).type == FN_POW) * 4)
+
+static int eval_stack(struct FnToken* expr,
+                      unsigned int len,
+                      float s,
+                      float t,
+                      unsigned int n,
+                      struct Data* params[10],
+                      float* res) {
+    unsigned int i = 0;
+    float stack[FN_STACK_SIZE];
+    unsigned int stackLen = 0;
+
+    for (i = 0; i < len; i++) {
+        switch (expr[i].type) {
+            case FN_LIT:
+                STACK_PUSH(stack, expr[i].val.f, stackLen);
+                break;
+            case FN_S:
+                STACK_PUSH(stack, s, stackLen);
+                break;
+            case FN_T:
+                STACK_PUSH(stack, t, stackLen);
+                break;
+            case FN_N:
+                STACK_PUSH(stack, n, stackLen);
+                break;
+            case FN_I:
+                STACK_PUSH(stack,
+                           data_float(params[expr[i].val.n], s, 0),
+                           stackLen);
+                break;
+            case FN_NEG:
+                if (stackLen < 1) return 0;
+                stack[stackLen - 1] *= -1;
+                break;
+            case FN_PLUS:
+                if (stackLen < 2) return 0;
+                stack[stackLen - 2] += stack[stackLen - 1];
+                stackLen--;
+                break;
+            case FN_MINUS:
+                if (stackLen < 2) return 0;
+                stack[stackLen - 2] -= stack[stackLen - 1];
+                stackLen--;
+                break;
+            case FN_MULT:
+                if (stackLen < 2) return 0;
+                stack[stackLen - 2] *= stack[stackLen - 1];
+                stackLen--;
+                break;
+            case FN_DIV:
+                if (stackLen < 2) return 0;
+                stack[stackLen - 2] /= stack[stackLen - 1];
+                stackLen--;
+                break;
+            case FN_POW:
+                if (stackLen < 2) return 0;
+                stack[stackLen - 2] = pow(stack[stackLen - 2],
+                                          stack[stackLen - 1]);
+                stackLen--;
+                break;
+            case FN_FUN:
+                stack[stackLen - 1] = expr[i].val.func(stack[stackLen - 1]);
+                break;
+            default:
+                return 0;
+        }
+    }
+    if (stackLen != 1) return 0;
+    *res = stack[0];
+    return 1;
 }
 
 static int func_process(struct Node* n) {
     struct Buffer* out = &n->outputs[0]->content.buf;
-    float params[3];
+    struct FnToken token, prevToken = {0};
+    struct FnToken queue[FN_STACK_SIZE], opStack[FN_STACK_SIZE];
+    unsigned int queueLen = 0, opStackLen = 0, i;
+    int err;
+    const char* cur;
 
-    if (!func_valid(n)) return 0;
+    if (!func_setup(n)) return 0;
 
     if (!(out->data = malloc(out->size * sizeof(float)))) {
         return 0;
     }
-    switch (data_which_string(n->inputs[FUN], funcNames)) {
-        case EXP:
-            params[0] = data_float(n->inputs[PM0], 0, 1);
-            params[1] = data_float(n->inputs[PM1], 0, 0);
-            params[2] = data_float(n->inputs[PM2], 0, -1);
-            make_exp(out, params);
-            return 1;
-        case LIN:
-            params[0] = data_float(n->inputs[PM0], 0, 0);
-            params[1] = data_float(n->inputs[PM1], 0, 1);
-            make_lin(out, params);
-            return 1;
-        case INV:
-            params[0] = data_float(n->inputs[PM0], 0, 1);
-            params[1] = data_float(n->inputs[PM1], 0, 1);
-            make_inv(out, params);
-            return 1;
-        default:
-            return 0;
+    cur = n->inputs[FUN]->content.str;
+
+    /* shunting yard algorithm, see: 
+     * https://en.wikipedia.org/wiki/Shunting-yard_algorithm
+     */
+    while ((cur = next_token(cur, &token, &prevToken, &err))) {
+        switch (token.type) {
+            case FN_LIT:
+            case FN_S:
+            case FN_T:
+            case FN_N:
+            case FN_I:
+                STACK_PUSH(queue, token, queueLen);
+                break;
+            case FN_FUN:
+                STACK_PUSH(opStack, token, opStackLen);
+                break;
+            case FN_PLUS:
+            case FN_MINUS:
+            case FN_MULT:
+            case FN_DIV:
+            case FN_POW:
+                while (    opStackLen
+                        && IS_OP(opStack[opStackLen - 1])
+                        && (PREC(opStack[opStackLen - 1]) > PREC(token)
+                            || (PREC(opStack[opStackLen - 1]) == PREC(token)
+                                && opStack[opStackLen - 1].type != FN_POW))) {
+                    STACK_PUSH(queue, opStack[--opStackLen], queueLen);
+                }
+            case FN_NEG:
+            case FN_OPAR:
+                STACK_PUSH(opStack, token, opStackLen);
+                break;
+            case FN_CPAR:
+                while (opStackLen && opStack[opStackLen - 1].type != FN_OPAR) {
+                    STACK_PUSH(queue, opStack[--opStackLen], queueLen);
+                }
+                if (!opStackLen) {
+                    fprintf(stderr, "Error: %s: function: "
+                                    "')' has no matching '('\n",
+                                    n->name);
+                    return 0;
+                }
+                opStackLen--;
+                if (opStackLen && opStack[opStackLen - 1].type == FN_FUN) {
+                    STACK_PUSH(queue, opStack[--opStackLen], queueLen);
+                }
+                break;
+            default:
+                fprintf(stderr, "Error: %s: invalid token: %d\n",
+                        n->name, token.type);
+                return 0;
+        }
+        prevToken = token;
     }
-    return 0;
+    if (err) {
+        fprintf(stderr, "Error: %s: token error\n", n->name);
+        return 0;
+    }
+    for (; opStackLen; opStackLen--) {
+        if (opStack[opStackLen - 1].type == FN_OPAR) {
+            fprintf(stderr, "Error: %s: function: '(' has no matching ')'\n",
+                    n->name);
+            return 0;
+        }
+        STACK_PUSH(queue, opStack[opStackLen - 1], queueLen);
+    }
+    for (i = 0; i < out->size; i++) {
+        float s = (float) i / (float) out->size;
+        float t = (float) i / (float) out->samplingRate;
+
+        if (!eval_stack(queue, queueLen,
+                        s, t, i, n->inputs + PM0,
+                        out->data + i)) {
+            fprintf(stderr, "Error: %s: "
+                    "stack error, expression might be incorrect\n",
+                    n->name);
+            return 0;
+        }
+    }
+    return 1;
 }
