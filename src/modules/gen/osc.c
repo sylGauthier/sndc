@@ -22,7 +22,11 @@ const struct Module osc = {
     "osc", "A generator for sine, saw and square waves",
     {
         {"function",    DATA_STRING,                REQUIRED,
-                        "waveform: 'sin', 'square' or 'saw'"},
+                        "waveform: 'sin', 'square', 'saw' or 'input'"},
+
+        {"waveform",    DATA_BUFFER,                OPTIONAL,
+                        "buffer containing waveform, "
+                        "used when 'input' is specified in 'function'"},
 
         {"freq",        DATA_FLOAT | DATA_BUFFER,   REQUIRED,
                         "frequency in Hz"},
@@ -61,6 +65,7 @@ const struct Module osc = {
 
 enum OscInputType {
     FUN, /* wave function */
+    WAV, /* wave form */
     FRQ, /* frequency */
     AMP, /* amplitude */
     POF, /* period offset */
@@ -76,13 +81,15 @@ static const char* funcNames[] = {
     "sin",
     "square",
     "saw",
+    "input",
     NULL
 };
 
 enum FuncType {
     SIN,
     SQUARE,
-    SAW
+    SAW,
+    INPUT
 };
 
 static int osc_valid(struct Node* n) {
@@ -162,7 +169,10 @@ static int osc_process(struct Node* n) {
     unsigned int i, size;
     struct Buffer bwave;
 
-    if (!osc_valid(n)) return 0;
+    if (!osc_valid(n)) {
+        fprintf(stderr, "Error: %s: invalid inputs\n", n->name);
+        return 0;
+    }
 
     bwave.data = wave;
     bwave.size = RES;
@@ -195,6 +205,13 @@ static int osc_process(struct Node* n) {
             break;
         case SAW:
             make_saw(wave, RES, param);
+            break;
+        case INPUT:
+            if (!n->inputs[WAV]) {
+                fprintf(stderr, "Error: %s: missing 'waveform'\n", n->name);
+                return 0;
+            }
+            bwave = n->inputs[WAV]->content.buf;
             break;
         default:
             return 0;
