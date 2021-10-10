@@ -11,7 +11,7 @@ bpm: binop {
 k: kick {
     shape: "saw";
     frequency: 40;
-    decay: -20.;
+    decay: 20.;
 }
 
 s: snare{}

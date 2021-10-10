@@ -1,5 +1,5 @@
 export input clickbase.freq as frequency;
-export input decay.param2 as decay;
+export input decay.param0 as decay;
 export input clickbase.function as shape;
 
 export output click.out as out;
@@ -24,10 +24,8 @@ bang: mix {
 }
 
 filterdecay: func {
-    function: "exp";
+    expr: "400 * exp(-2 * $s)";
     duration: 1;
-    param0: 400;
-    param2: -2.;
 }
 
 fn: filter {
@@ -37,11 +35,9 @@ fn: filter {
 }
 
 decay: func {
-    function: "exp";
+    expr: "exp(-$0 * $s)";
     duration: 1;
-
-    param0: 1;
-    param2: -20.0;
+    param0: 20.0;
 }
 
 click: binop {

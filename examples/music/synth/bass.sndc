@@ -1,5 +1,5 @@
 export input freq.input0 as frequency;
-export input decay.input1 as sustain;
+export input envelop.param1 as sustain;
 export input base.amplitude as velocity;
 
 export input base.param as sharpness;
@@ -21,11 +21,8 @@ base: osc {
 }
 
 harmonic_decay: func {
-    function: "exp";
+    expr: "2000 * exp(-20 * $s)";
     duration: 1;
-
-    param0: 2000;
-    param2: -20.0;
 }
 
 harmonic_offset: binop {
@@ -40,18 +37,12 @@ f: filter {
     cutoff: harmonic_offset.out;
 }
 
-decay: binop {
-    operator: "div";
-    input0: -6.0;
-    input1: 1;
-}
-
 envelop: func {
-    function: "exp";
+    expr: "$0 * exp(-6 / $1 * $s)";
     duration: 1;
 
     param0: 1;
-    param2: decay.out;
+    param1: 1;
 }
 
 result: binop {

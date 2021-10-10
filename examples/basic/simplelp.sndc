@@ -5,11 +5,8 @@ sq: osc {
 }
 
 env: func {
-    function: "exp";
+    expr: "44100 * exp(-10 * $s)";
     duration: 5;
-
-    param0: 44100;
-    param2: -2.;
 }
 
 f: simplelp {

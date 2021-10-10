@@ -1,5 +1,5 @@
-export input amp.param2 as tdecay;
-export input amp2.param2 as cdecay;
+export input amp.param0 as tdecay;
+export input amp2.param0 as cdecay;
 export input fenv.param0 as hfcut;
 export input f.lfcutoff as lfcut;
 
@@ -7,12 +7,11 @@ export output mix.out as out;
 
 /* Timber */
 amp: func {
-    function: "exp";
+    expr: "exp(-$0 * $s)";
     duration: 1;
     sampling: 100;
 
-    param0: 1;
-    param2: -50.;
+    param0: 50.;
 }
 
 wav0: osc {
@@ -58,12 +57,11 @@ noise: noise {
 }
 
 fenv: func {
-    function: "exp";
+    expr: "$0 * exp(-2 * $s)";
     duration: 1;
     sampling: 10;
 
     param0: 10000;
-    param2: -2.;
 }
 
 f: gaussbp {
@@ -73,11 +71,11 @@ f: gaussbp {
 }
 
 amp2: func {
-    function: "exp";
+    expr: "0.5 * exp(-$0 * $s)";
     duration: 1;
     sampling: 100;
-    param0: 0.5;
-    param2: -30.;
+
+    param0: 30;
 }
 
 envnoise: binop {
