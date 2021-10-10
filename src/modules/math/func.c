@@ -171,6 +171,13 @@ static float (*get_func(const char* f, const char* (*end)))(float) {
     return NULL;
 }
 
+#define IS_OP(t) ((t).type >= FN_PLUS && (t).type <= FN_POW)
+#define PREC(t) (((t).type == FN_PLUS || (t).type == FN_MINUS) * 2 \
+               + (    (t).type == FN_MULT \
+                   || (t).type == FN_DIV \
+                   || (t).type == FN_NEG) * 3 \
+               + ((t).type == FN_POW) * 4)
+
 static const char* next_token(const char* func,
                               struct FnToken* tk,
                               struct FnToken* prevtk,
@@ -182,7 +189,9 @@ static const char* next_token(const char* func,
     switch (func[0]) {
         case '\0': return NULL;
         case '-':
-            if (prevtk->type == FN_LIT || prevtk->type == FN_CPAR) {
+            if (       prevtk->type != FN_NONE
+                    && prevtk->type != FN_OPAR
+                    && !IS_OP(*prevtk)) {
                 tk->type = FN_MINUS;
                 return func + 1;
             }
@@ -231,12 +240,6 @@ static const char* next_token(const char* func,
     } else { \
         (s)[(l)++] = (v); \
     }
-#define IS_OP(t) ((t).type >= FN_PLUS && (t).type <= FN_POW)
-#define PREC(t) (((t).type == FN_PLUS || (t).type == FN_MINUS) * 2 \
-               + (    (t).type == FN_MULT \
-                   || (t).type == FN_DIV \
-                   || (t).type == FN_NEG) * 3 \
-               + ((t).type == FN_POW) * 4)
 
 static int eval_stack(struct FnToken* expr,
                       unsigned int len,
