@@ -14,7 +14,7 @@ const struct Module binop = {
         {"input1",      DATA_BUFFER | DATA_FLOAT,   REQUIRED, "input #1"},
 
         {"operator",    DATA_STRING,                REQUIRED,
-                        "operator: 'add', 'sub', 'mul', 'div'"},
+                        "operator: 'add', 'sub', 'mul', 'div', 'min', 'max'"},
     },
     {
         {"out",     DATA_BUFFER,                REQUIRED,
@@ -36,8 +36,13 @@ enum BinopType {
     OP_ADD,
     OP_SUB,
     OP_MUL,
-    OP_DIV
+    OP_DIV,
+    OP_MIN,
+    OP_MAX
 };
+
+#define MIN(a, b) ((a) < (b) ? (a) : (b))
+#define MAX(a, b) ((a) > (b) ? (a) : (b))
 
 static int binop_process(struct Node* n) {
     struct Data *in0, *in1, *out;
@@ -60,6 +65,10 @@ static int binop_process(struct Node* n) {
         op = OP_MUL;
     } else if (!strcmp(opstr, "div")) {
         op = OP_DIV;
+    } else if (!strcmp(opstr, "min")) {
+        op = OP_MIN;
+    } else if (!strcmp(opstr, "max")) {
+        op = OP_MAX;
     } else {
         fprintf(stderr, "Error: %s: invalid op: %s\n", n->name, opstr);
         return 0;
@@ -84,6 +93,12 @@ static int binop_process(struct Node* n) {
                 break;
             case OP_DIV:
                 out->content.f = in0->content.f / in1->content.f;
+                break;
+            case OP_MIN:
+                out->content.f = MIN(in0->content.f, in1->content.f);
+                break;
+            case OP_MAX:
+                out->content.f = MAX(in0->content.f, in1->content.f);
                 break;
         }
         out->type = DATA_FLOAT;
@@ -126,6 +141,22 @@ static int binop_process(struct Node* n) {
 
                 out->content.buf.data[i] = in0->content.buf.data[i]
                                          / data_float(in1, t, 0);
+            }
+            break;
+        case OP_MIN:
+            for (i = 0; i < out->content.buf.size; i++) {
+                float t = (float) i / (float) out->content.buf.size;
+
+                out->content.buf.data[i] = MIN(in0->content.buf.data[i],
+                                               data_float(in1, t, 0));
+            }
+            break;
+        case OP_MAX:
+            for (i = 0; i < out->content.buf.size; i++) {
+                float t = (float) i / (float) out->content.buf.size;
+
+                out->content.buf.data[i] = MAX(in0->content.buf.data[i],
+                                               data_float(in1, t, 0));
             }
             break;
     }
