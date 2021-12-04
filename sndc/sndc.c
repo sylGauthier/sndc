@@ -2,9 +2,6 @@
 #include <stdlib.h>
 
 #include "sndc.h"
-#include "parser.h"
-
-char sndcPath[MAX_SNDC_PATH][MAX_PATH_LENGTH];
 
 static void list_modules() {
     unsigned int i;
@@ -100,34 +97,6 @@ static int help(int argc, char** argv) {
     return 1;
 }
 
-static int init_path() {
-    const char* envpath;
-    unsigned int i = 0, j = 0;
-
-    if ((envpath = getenv("SNDCPATH"))) {
-        const char* cur = envpath;
-
-        while (*cur) {
-            if (i >= MAX_SNDC_PATH) {
-                fprintf(stderr, "Warning: SNDCPATH has too many paths\n");
-                break;
-            } else if (*cur == ':') {
-                i++;
-                j = 0;
-                cur++;
-            } else if (j < MAX_PATH_LENGTH - 1) {
-                sndcPath[i][j++] = *cur;
-                cur++;
-            } else {
-                fprintf(stderr, "Warning: SNDCPATH too long\n");
-                sndcPath[i][0] = '\0';
-                cur = strchr(cur, ':');
-            }
-        }
-    }
-    return 1;
-}
-
 int main(int argc, char** argv) {
     struct Stack s;
     struct SNDCFile file = {0};
@@ -153,7 +122,7 @@ int main(int argc, char** argv) {
         }
     }
 
-    init_path();
+    path_init();
     stack_init(&s);
     s.verbose = 1;
     if (!(sndcInit = parse_sndc(&file, argv[1]))) {

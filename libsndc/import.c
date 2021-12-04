@@ -2,7 +2,6 @@
 #include <stdio.h>
 
 #include "sndc.h"
-#include "parser.h"
 
 static int import_setup(struct Node* node) {
     struct Stack* stack = NULL;

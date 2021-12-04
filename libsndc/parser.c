@@ -3,7 +3,6 @@
 
 #include "sndc.h"
 #include "tokens.h"
-#include "parser.h"
 
 enum ParseError {
     ERR_NO,

@@ -3,7 +3,6 @@
 #include <stdio.h>
 
 #include "sndc.h"
-#include "parser.h"
 
 void node_init(struct Node* node) {
     unsigned int i;

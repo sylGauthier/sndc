@@ -10,7 +10,82 @@
 #define MAX_PATH_LENGTH     128
 #define MAX_MOD_NAME_LEN    16
 
+#define MAX_ENTRIES 128
+#define MAX_FIELDS  128
+#define MAX_IMPORT  128
+#define MAX_EXPORT  128
+
+
+/*** SNDC_PATH management ***/
+
 extern char sndcPath[MAX_SNDC_PATH][MAX_PATH_LENGTH];
+
+int path_init();
+
+/****************/
+
+
+/*** Parser ***/
+
+struct Ref {
+    char* name;
+    char* field;
+};
+
+struct Field {
+    char* name;
+    enum FieldType {
+        FIELD_FLOAT,
+        FIELD_STRING,
+        FIELD_REF,
+        FIELD_NODE
+    } type;
+    union FieldData {
+        float f;
+        char* str;
+        struct Ref ref;
+        struct Entry* node;
+    } data;
+};
+
+struct Entry {
+    char* name;
+    char* type;
+    struct Field fields[MAX_FIELDS];
+    unsigned int numFields;
+};
+
+struct Export {
+    char* symbol;
+    struct Ref ref;
+    enum ExportType {
+        EXP_INPUT,
+        EXP_OUTPUT
+    } type;
+};
+
+struct Import {
+    char* fileName;
+    char* importName;
+};
+
+struct SNDCFile {
+    struct Import imports[MAX_IMPORT];
+    struct Export exports[MAX_EXPORT];
+    struct Entry entries[MAX_ENTRIES];
+    unsigned int numEntries, numImport, numExport;
+
+    char* path;
+};
+
+char* str_cpy(const char* s);
+int parse_sndc(struct SNDCFile* file, const char* name);
+void free_sndc(struct SNDCFile* file);
+
+/****************/
+
+
+/*** Data and Buffer ***/
 
 enum InterpType {
     INTERP_STEP,
@@ -45,6 +120,10 @@ struct Data {
 void data_init(struct Data* data);
 void data_free(struct Data* data);
 
+/****************/
+
+
+/*** Node ***/
 
 struct Module;
 
@@ -67,6 +146,10 @@ void node_init(struct Node* node);
 void node_free(struct Node* node);
 void node_flush_output(struct Node* node);
 
+/****************/
+
+
+/*** Module management ***/
 
 struct DataDesc {
     const char* name;
@@ -77,8 +160,6 @@ struct DataDesc {
     } req;
     const char* description;
 };
-
-struct SNDCFile;
 
 struct Module {
     const char* name;
@@ -101,7 +182,10 @@ int module_get_output_slot(const struct Module* module, const char* name);
 int module_import(struct Module* module, const char* name, const char* file);
 void module_free_import(struct Module* module);
 
+/****************/
 
+
+/*** Stack management ***/
 struct Stack {
     struct Module** imports;
     struct Data** data;
@@ -126,5 +210,7 @@ struct Node* stack_get_node(struct Stack* stack, const char* name);
 int stack_process(struct Stack* stack);
 
 int stack_load(struct Stack* stack, struct SNDCFile* file);
+
+/****************/
 
 #endif

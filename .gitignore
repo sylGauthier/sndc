@@ -1,3 +1,5 @@
-sndc
+sndc/sndc
+sndc.pc
 *.o
-src/modules.h
+libsndc/modules.h
+libsndc.a
