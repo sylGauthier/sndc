@@ -3,3 +3,4 @@ sndc.pc
 *.o
 libsndc/modules.h
 libsndc.a
+modules_def.c

@@ -1,4 +1,4 @@
-#DEBUG := 1
+# DEBUG := 1
 
 NAME := sndc
 VERSION := 0.1
@@ -16,10 +16,11 @@ LDFLAGS += -lm
 LDFLAGS += $(shell pkg-config --libs $(DEPS))
 
 MODSRC := $(shell find lib$(NAME)/modules -name '*.c')
-MODLIST := lib$(NAME)/modules.h
+MODLIST := lib$(NAME)/modules_def.c
 
 LIBOBJS := $(patsubst %.c,%.o,$(wildcard lib$(NAME)/*.c))
 LIBOBJS += $(patsubst %.c,%.o,$(MODSRC))
+LIBOBJS += $(patsubst %.c,%.o,$(MODLIST))
 LIBOBJS += $(patsubst %.l,%.o,lib$(NAME)/lexer.l)
 
 LIB := lib$(NAME).a
@@ -35,9 +36,8 @@ $(MODLIST): $(MODSRC)
 	for m in $$modules ; do printf "extern const struct Module %s;\n" "$$m" ; done > $@; \
 	printf "\nconst struct Module* modules[] = {\n" >> $@; \
 	for m in $$modules ; do printf "    &%s,\n" "$$m" ; done >> $@; \
-	printf "    NULL\n};\n" >> $@
-
-lib$(NAME)/modules.c: $(MODLIST)
+	printf "};\n" >> $@; \
+	printf "unsigned int numModules = sizeof(modules) / sizeof(struct Module*);\n" >> $@
 
 ################
 

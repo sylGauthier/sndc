@@ -1,11 +1,10 @@
 #include <string.h>
 
 #include "sndc.h"
-#include "modules.h"
 
 const struct Module* module_find(const char* name) {
     unsigned int i;
-    for (i = 0; modules[i]; i++) {
+    for (i = 0; i < numModules; i++) {
         if (!strcmp(modules[i]->name, name)) return modules[i];
     }
     return NULL;

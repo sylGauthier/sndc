@@ -80,6 +80,7 @@ static int import_setup(struct Node* node) {
 }
 
 static int import_process(struct Node* node) {
+    stack_reset(node->data);
     return stack_process(node->data);
 }
 

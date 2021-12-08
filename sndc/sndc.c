@@ -6,7 +6,7 @@
 static void list_modules() {
     unsigned int i;
     printf("Available modules:\n");
-    for (i = 0; modules[i]; i++) {
+    for (i = 0; i < numModules; i++) {
         printf("    %s - %s\n", modules[i]->name, modules[i]->desc);
     }
 }
@@ -69,7 +69,7 @@ static void print_module(const struct Module* module) {
 static int help_module(const char* module) {
     unsigned int i;
 
-    for (i = 0; modules[i]; i++) {
+    for (i = 0; i < numModules; i++) {
         if (!strcmp(modules[i]->name, module)) {
             print_module(modules[i]);
             return 0;

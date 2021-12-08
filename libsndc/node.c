@@ -326,3 +326,11 @@ int stack_load(struct Stack* stack, struct SNDCFile* file) {
     if (!ok) stack_free(stack);
     return ok;
 }
+
+void stack_reset(struct Stack* stack) {
+    unsigned int i;
+
+    for (i = 0; i < stack->numNodes; i++) {
+        node_flush_output(stack->nodes[i]);
+    }
+}

@@ -159,6 +159,10 @@ struct DataDesc {
         REQUIRED
     } req;
     const char* description;
+
+    float min;
+    float max;
+    const char* values;
 };
 
 struct Module {
@@ -175,6 +179,7 @@ struct Module {
 };
 
 extern const struct Module* modules[];
+extern const unsigned int numModules;
 
 const struct Module* module_find(const char* name);
 int module_get_input_slot(const struct Module* module, const char* name);
@@ -208,8 +213,8 @@ struct Data* stack_data_new(struct Stack* stack);
 struct Module* stack_import_new(struct Stack* stack);
 struct Node* stack_get_node(struct Stack* stack, const char* name);
 int stack_process(struct Stack* stack);
-
 int stack_load(struct Stack* stack, struct SNDCFile* file);
+void stack_reset(struct Stack* stack);
 
 /****************/
 
