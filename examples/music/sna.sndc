@@ -2,10 +2,8 @@ import "synth/bass.sndc" as bass;
 import "drumkit/kick.sndc" as kick;
 import "drumkit/snare.sndc" as snare;
 
-bpm: binop {
-    operator: "add";
-    input0: 120;
-    input1: 0;
+bpm: var {
+    value: 120;
 }
 
 k: kick {
@@ -17,7 +15,7 @@ k: kick {
 s: snare{}
 
 kbd: keyboard {
-    bpm: bpm.out;
+    bpm: bpm.value;
     instrument: bass {
         sharpness: 0.3;
     };
@@ -25,7 +23,7 @@ kbd: keyboard {
 }
 
 drum: drumbox {
-    bpm: bpm.out;
+    bpm: bpm.value;
     sample0: k.out;
     sample1: s.out;
 
@@ -34,7 +32,7 @@ drum: drumbox {
 }
 
 l: layout {
-    bpm: bpm.out;
+    bpm: bpm.value;
     file: "sna.sndl";
 
     sample0: kbd.out;
