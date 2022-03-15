@@ -12,6 +12,7 @@
 #define GAIN_RESOL          1024
 
 static int filter_process(struct Node* n);
+static int filter_teardown(struct Node* n);
 
 /* DECLARE_MODULE(fftbp) */
 const struct Module fftbp = {
@@ -40,7 +41,7 @@ const struct Module fftbp = {
     },
     NULL,
     filter_process,
-    NULL
+    filter_teardown
 };
 
 enum FilterInput {
@@ -220,4 +221,9 @@ static int filter_process(struct Node* n) {
     fftwf_free(fftin);
     fftwf_free(fftout);
     return ok;
+}
+
+int filter_teardown(struct Node* n) {
+    fftwf_cleanup();
+    return 1;
 }
