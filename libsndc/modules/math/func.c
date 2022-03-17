@@ -74,13 +74,22 @@ enum FnTokenType {
     FN_NONE = 0,
 
     FN_LIT,
+
     FN_PLUS,
     FN_MINUS,
     FN_MULT,
     FN_DIV,
     FN_NEG,
     FN_POW,
+    FN_EQU,
+    FN_NEQ,
+    FN_LT,
+    FN_GT,
+    FN_LEQ,
+    FN_GEQ,
+
     FN_FUN,
+
     FN_OPAR,
     FN_CPAR,
 
@@ -90,9 +99,15 @@ enum FnTokenType {
     FN_I
 };
 
-const char* tkname[] = {
-    "<none>", "LIT", "PLUS", "MINUS", "MULT", "DIV", "NEG", "POW", "FUN",
+static const char* tkname[] = {
+    "<none>", "LIT", "PLUS", "MINUS", "MULT", "DIV", "NEG", "POW",
+    "EQU", "NEQ", "LT", "GT", "LEQ", "GEQ",
+    "FUN",
     "OPAR", "CPAR", "REG_S", "REG_T", "REG_N", "REG_I"
+};
+
+static const int tkprec[] = {
+    0, 0, 4, 4, 3, 3, 2, 1, 7, 7, 6, 6, 6, 6, 0, 0, 0, 0, 0, 0, 0
 };
 
 struct FnMathFunc {
@@ -100,7 +115,7 @@ struct FnMathFunc {
     float (*func)(float);
 };
 
-const struct FnMathFunc functions[] = {
+static const struct FnMathFunc functions[] = {
     {"exp", expf},
     {"log", logf},
     {"sqrt", sqrtf},
@@ -171,12 +186,8 @@ static float (*get_func(const char* f, const char* (*end)))(float) {
     return NULL;
 }
 
-#define IS_OP(t) ((t).type >= FN_PLUS && (t).type <= FN_POW)
-#define PREC(t) (((t).type == FN_PLUS || (t).type == FN_MINUS) * 2 \
-               + (    (t).type == FN_MULT \
-                   || (t).type == FN_DIV \
-                   || (t).type == FN_NEG) * 3 \
-               + ((t).type == FN_POW) * 4)
+#define IS_OP(t) ((t).type > FN_LIT && (t).type < FN_FUN)
+#define PREC(t) (tkprec[t.type])
 
 static const char* next_token(const char* func,
                               struct FnToken* tk,
@@ -203,6 +214,34 @@ static const char* next_token(const char* func,
         case '^': tk->type = FN_POW;    return func + 1;
         case '(': tk->type = FN_OPAR;   return func + 1;
         case ')': tk->type = FN_CPAR;   return func + 1;
+        case '=':
+            if (func[1] == '=') {
+                tk->type = FN_EQU;
+                return func + 2;
+            }
+            fprintf(stderr, "Error: func: single '='\n");
+            *err = 1;
+            return NULL;
+        case '!':
+            if (func[1] == '=') {
+                tk->type = FN_NEQ;
+                return func + 2;
+            }
+            break;
+        case '<':
+            if (func[1] == '=') {
+                tk->type = FN_LEQ;
+                return func + 2;
+            }
+            tk->type = FN_LT;
+            return func + 1;
+        case '>':
+            if (func[1] == '=') {
+                tk->type = FN_GEQ;
+                return func + 2;
+            }
+            tk->type = FN_GT;
+            return func + 1;
         case '$':
             switch (func[1]) {
                 case 's': tk->type = FN_S; return func + 2;
@@ -301,6 +340,42 @@ static int eval_stack(struct FnToken* expr,
                                           stack[stackLen - 1]);
                 stackLen--;
                 break;
+            case FN_EQU:
+                if (stackLen < 2) return 0;
+                stack[stackLen - 2] =
+                    (stack[stackLen - 2] == stack[stackLen - 1]);
+                stackLen--;
+                break;
+            case FN_NEQ:
+                if (stackLen < 2) return 0;
+                stack[stackLen - 2] =
+                    (stack[stackLen - 2] != stack[stackLen - 1]);
+                stackLen--;
+                break;
+            case FN_LT:
+                if (stackLen < 2) return 0;
+                stack[stackLen - 2] =
+                    (stack[stackLen - 2] < stack[stackLen - 1]);
+                stackLen--;
+                break;
+            case FN_GT:
+                if (stackLen < 2) return 0;
+                stack[stackLen - 2] =
+                    (stack[stackLen - 2] > stack[stackLen - 1]);
+                stackLen--;
+                break;
+            case FN_LEQ:
+                if (stackLen < 2) return 0;
+                stack[stackLen - 2] =
+                    (stack[stackLen - 2] <= stack[stackLen - 1]);
+                stackLen--;
+                break;
+            case FN_GEQ:
+                if (stackLen < 2) return 0;
+                stack[stackLen - 2] =
+                    (stack[stackLen - 2] >= stack[stackLen - 1]);
+                stackLen--;
+                break;
             case FN_FUN:
                 stack[stackLen - 1] = expr[i].val.func(stack[stackLen - 1]);
                 break;
@@ -348,9 +423,15 @@ static int func_process(struct Node* n) {
             case FN_MULT:
             case FN_DIV:
             case FN_POW:
+            case FN_EQU:
+            case FN_NEQ:
+            case FN_LT:
+            case FN_GT:
+            case FN_LEQ:
+            case FN_GEQ:
                 while (    opStackLen
                         && IS_OP(opStack[opStackLen - 1])
-                        && (PREC(opStack[opStackLen - 1]) > PREC(token)
+                        && (PREC(opStack[opStackLen - 1]) < PREC(token)
                             || (PREC(opStack[opStackLen - 1]) == PREC(token)
                                 && opStack[opStackLen - 1].type != FN_POW))) {
                     STACK_PUSH(queue, opStack[--opStackLen], queueLen);
