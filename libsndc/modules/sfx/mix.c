@@ -14,7 +14,7 @@ const struct Module mix = {
     {
         {"input0",  DATA_BUFFER,                REQUIRED,
                     "input #0"},
-        {"input1",  DATA_BUFFER,                REQUIRED,
+        {"input1",  DATA_BUFFER,                OPTIONAL,
                     "input #1"},
         {"input2",  DATA_BUFFER,                OPTIONAL,
                     "input #2"},
