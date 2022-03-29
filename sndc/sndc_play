@@ -49,4 +49,4 @@ fi
 
 FORMAT="$(getformat)"
 
-sndc "$FILE" | aplay -c 1 -t raw -r "$BR" -f "$FORMAT"
+(sleep 0.1 && sndc "$FILE") | aplay -R 100 -c 1 -t raw -r "$BR" -f "$FORMAT"
