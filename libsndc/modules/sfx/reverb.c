@@ -12,7 +12,7 @@ static int reverb_process(struct Node* n);
 
 /* DECLARE_MODULE(reverb) */
 const struct Module reverb = {
-    "reverb", "Reverb algorithm using multiple delay lines",
+    "reverb", "Implementation of the Freeverb algorithm",
     {
         {"in",      DATA_BUFFER,                REQUIRED,
                     "input buffer to apply reverb to, "
@@ -144,7 +144,7 @@ static float freeverb_run(struct Freeverb* fv, float s) {
         out = fv->g * d2 - out + (1. + fv->g) * d1;
         delayline_in(&fv->fbs2[i], out);
     }
-    return out / 3;
+    return out / 8;
 }
 
 static int reverb_setup(struct Node* n, struct Freeverb* fv) {
