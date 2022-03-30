@@ -98,6 +98,8 @@ static int mix_valid(struct Node* n) {
     n->outputs[OUT]->content.buf.size = maxSize;
     n->outputs[OUT]->content.buf.samplingRate =
         n->inputs[IN0]->content.buf.samplingRate;
+    n->outputs[OUT]->content.buf.interp =
+        n->inputs[IN0]->content.buf.interp;
     return 1;
 }
 
