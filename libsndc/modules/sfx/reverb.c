@@ -198,7 +198,7 @@ static int reverb_process(struct Node* n) {
         out[i] = fv.wet * freeverb_run(&fv, in[i]) + (1. - fv.wet) * in[i];
     }
     for (; i < outSize; i++) {
-        out[i] = fv.wet * freeverb_run(&fv, 0) + (1. - fv.wet) * in[i];
+        out[i] = fv.wet * freeverb_run(&fv, 0);
     }
 
     return 1;
