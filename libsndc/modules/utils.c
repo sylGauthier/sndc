@@ -149,3 +149,57 @@ void addbuf(float* dest, float* src, unsigned int size) {
         dest[i] += src[i];
     }
 }
+
+/* A4 = 440 Hz */
+static float freqs[12] = {
+    4186.01, /* Do   | C8  */
+    4434.92, /* Do#  | C#8 */
+    4698.63, /* Ré   | D8  */
+    4978.03, /* Ré#  | D#8 */
+    5274.04, /* Mi   | E8  */
+    5587.65, /* Fa   | F8  */
+    5919.91, /* Fa#  | F#8 */
+    6271.93, /* Sol  | G8  */
+    6644.88, /* Sol# | G#8 */
+    7040.00, /* La   | A8  */
+    7458.62, /* La#  | A#8 */
+    7902.13, /* Si   | B8  */
+};
+
+int note_to_freq(const char* note, float* freq) {
+    int offset = 0, octave = 0;
+    const char* cur = note;
+
+    if (strlen(note) < 2) return 0;
+    switch (*cur) {
+        case 'A': offset = 9; break;
+        case 'B': offset = 11; break;
+        case 'C': offset = 0; break;
+        case 'D': offset = 2; break;
+        case 'E': offset = 4; break;
+        case 'F': offset = 5; break;
+        case 'G': offset = 7; break;
+        default: return 0;
+    }
+    cur++;
+    if (*cur == '#' || *cur == 'b') {
+        if (strlen(cur) < 2) return 0;
+        offset += (*cur == '#' ? 1 : -1);
+        cur++;
+    }
+    if (*cur < '0' || *cur > '9') return 0;
+    octave = (*cur - '0');
+
+    if (offset < 0) {
+        offset += 12;
+        octave -= 1;
+    } else if (offset > 11) {
+        offset -= 12;
+        octave += 1;
+    }
+    if (octave < 0) octave = 0;
+    if (octave > 8) octave = 8;
+    *freq = freqs[offset];
+    for (; octave < 8; octave++) *freq /= 2.;
+    return 1;
+}

@@ -38,4 +38,6 @@ float convol(struct Buffer* buf,
              unsigned int pos);
 void addbuf(float* dest, float* src, unsigned int size);
 
+int note_to_freq(const char* note, float* freq);
+
 #endif
