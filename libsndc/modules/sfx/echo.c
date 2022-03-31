@@ -142,7 +142,7 @@ static int echo_process(struct Node* n) {
         out[i] = echo_run(&echo, in[i]);
     }
     for (; i < outSize; i++) {
-        out[i] = echo_run(&echo, out[i]);
+        out[i] = echo_run(&echo, 0);
     }
     return 1;
 }
