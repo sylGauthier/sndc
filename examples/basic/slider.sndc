@@ -1,0 +1,30 @@
+o1: osc {
+    freq: 440;
+    duration: 10;
+    function: "sin";
+}
+
+o2: osc {
+    freq: 220;
+    duration: 10;
+    function: "sin";
+}
+
+lfo: func {
+    expr: "(1 + sin(3 * $t)) / 2";
+    duration: 10;
+    sampling: 20;
+}
+
+profile: func {
+    expr: "$n >= 1";
+    duration: 1;
+    sampling: 3;
+}
+
+slide: slider {
+    input0: o1.out;
+    input1: o2.out;
+    slider: lfo.out;
+    profile: profile.out;
+}
