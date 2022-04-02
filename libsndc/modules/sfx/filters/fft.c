@@ -25,14 +25,17 @@ const struct Module fftbp = {
                         "frequency cutoff"},
 
         {"mode",        DATA_STRING,                REQUIRED,
-                        "filter mode, 'lowpass' or 'highpass'"},
+                        "filter mode, 'lowpass', 'highpass' or 'custom'"},
 
         {"order",       DATA_FLOAT,                 OPTIONAL,
                         "Butterworth order, preferably an even, "
                         "positive integer, def '4'"},
 
         {"fftwinsize",  DATA_FLOAT,                 OPTIONAL,
-                        "FFT window size, def '2048'"}
+                        "FFT window size, def '2048'"},
+
+        {"gain",        DATA_BUFFER,                OPTIONAL,
+                        "custom frequency gain buffer"}
     },
     {
         {"out",         DATA_BUFFER,                REQUIRED,
@@ -50,6 +53,8 @@ enum FilterInput {
     MOD,
     ORD,
     FTW,
+    GNB,
+
     NUM_INPUTS
 };
 
@@ -127,7 +132,8 @@ static void apply_filter(fftwf_complex* spectre,
 
 enum FilterMode {
     LOW_PASS,
-    HIGH_PASS
+    HIGH_PASS,
+    CUSTOM
 };
 
 static int make_butterworth_gain(struct Buffer* buf,
@@ -164,6 +170,8 @@ static int get_mode(struct Node* n, int* mode) {
         *mode = LOW_PASS;
     } else if (!strcmp(modestr, "highpass")) {
         *mode = HIGH_PASS;
+    } else if (!strcmp(modestr, "custom")) {
+        *mode = CUSTOM;
     } else {
         fprintf(stderr, "Error: %s: 'mode' must be 'lowpass' or 'highpass'\n",
                         n->name);
@@ -173,7 +181,7 @@ static int get_mode(struct Node* n, int* mode) {
 }
 
 static int filter_process(struct Node* n) {
-    struct Buffer *in, *out, gain = {0};
+    struct Buffer *in, *out, *gain = NULL, bw = {0};
     struct Data* cutoffdata;
     float *win = NULL, *fftin = NULL, order;
     unsigned int winSize, stride, ok = 0;
@@ -193,13 +201,21 @@ static int filter_process(struct Node* n) {
     order = data_float(n->inputs[ORD], 0, DEFAULT_ORDER);
     stride = winSize / 2;
 
+    if (n->inputs[GNB]) {
+        gain = &n->inputs[GNB]->content.buf;
+    } else if (make_butterworth_gain(&bw, order, GAIN_RESOL, mode)) {
+        gain = &bw;
+    } else {
+        fprintf(stderr, "Error: %s: can't make gain\n", n->name);
+        return 0;
+    }
+
     if (       (win = malloc(winSize * sizeof(float)))
             && (out->data = calloc(in->size, sizeof(float)))
             && (fftin = fftwf_malloc(winSize * sizeof(float)))
             && (fftout = fftwf_malloc((winSize / 2 + 1) * sizeof(*fftout)))
             && (forward = fftwf_plan_dft_r2c_1d(winSize, fftin, fftout, 0))
-            && (backward = fftwf_plan_dft_c2r_1d(winSize, fftout, fftin, 0))
-            && make_butterworth_gain(&gain, order, GAIN_RESOL, mode)) {
+            && (backward = fftwf_plan_dft_c2r_1d(winSize, fftout, fftin, 0))) {
         int i;
         float f0;
 
@@ -208,14 +224,14 @@ static int filter_process(struct Node* n) {
             f0 = data_float(cutoffdata, (float) i / (float) in->size, 0);
             load_fftin(fftin, in->data, in->size, win, winSize, i);
             fftwf_execute(forward);
-            apply_filter(fftout, winSize, in->samplingRate, f0, &gain);
+            apply_filter(fftout, winSize, in->samplingRate, f0, gain);
             fftwf_execute(backward);
             export_fftin(fftin, out->data, out->size, win, winSize, i);
         }
         ok = 1;
     }
     free(win);
-    free(gain.data);
+    free(bw.data);
     if (forward) fftwf_destroy_plan(forward);
     if (backward) fftwf_destroy_plan(backward);
     fftwf_free(fftin);
