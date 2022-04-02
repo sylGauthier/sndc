@@ -20,7 +20,7 @@ Dependencies:
  - libfftw3
 
 ```
-$ git clone github.com/sylGauthier/sndc.git
+$ git clone https://pedantic.software/git/sndc
 $ cd sndc
 $ make
 ```
