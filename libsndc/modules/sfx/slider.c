@@ -7,7 +7,8 @@ static int slider_process(struct Node* n);
 
 /* DECLARE_MODULE(slider) */
 const struct Module slider = {
-    "slider", "Mix 2 input buffers according to a specified gain profile",
+    "slider", "effect",
+    "Mix 2 input buffers according to a specified gain profile",
     {
         {"input0",  DATA_BUFFER,                REQUIRED, "input #0"},
         {"input1",  DATA_BUFFER,                REQUIRED, "input #1"},

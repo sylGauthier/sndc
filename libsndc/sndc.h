@@ -167,6 +167,7 @@ struct DataDesc {
 
 struct Module {
     const char* name;
+    const char* category;
     const char* desc;
     struct DataDesc inputs[MAX_INPUTS];
     struct DataDesc outputs[MAX_OUTPUTS];

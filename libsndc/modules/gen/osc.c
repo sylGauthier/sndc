@@ -19,7 +19,7 @@ static int osc_process(struct Node* n);
 
 /* DECLARE_MODULE(osc) */
 const struct Module osc = {
-    "osc", "A generator for sine, saw and square waves",
+    "osc", "generator", "A generator for sine, saw and square waves",
     {
         {"function",    DATA_STRING,                REQUIRED,
                         "waveform: 'sin', 'square', 'saw' or 'input'"},

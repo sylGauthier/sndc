@@ -16,7 +16,7 @@ static int filter_teardown(struct Node* n);
 
 /* DECLARE_MODULE(fftbp) */
 const struct Module fftbp = {
-    "filter", "Generic lowpass / highpass filter",
+    "filter", "filter", "Generic lowpass / highpass filter",
     {
         {"in",          DATA_BUFFER,                REQUIRED,
                         "input buffer to be filtered"},

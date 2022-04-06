@@ -11,7 +11,7 @@ static int keyboard_teardown(struct Node* n);
 
 /* DECLARE_MODULE(keyboard) */
 const struct Module keyboard = {
-    "keyboard", "Melodic sequencer for a given intrument node",
+    "keyboard", "sequencer", "Melodic sequencer for a given intrument node",
     {
         {"instrument",  DATA_NODE,      REQUIRED,
                         "the instrument node, "

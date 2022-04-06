@@ -8,7 +8,8 @@ static int drumbox_process(struct Node* n);
 
 /* DECLARE_MODULE(drumbox) */
 const struct Module drumbox = {
-    "drumbox", "Simple drum machine that sequences its input samples",
+    "drumbox", "sequencer",
+    "Simple drum machine that sequences its input samples",
     {
         {"bpm",         DATA_FLOAT,     REQUIRED,
                         "tempo in beats per minute"},

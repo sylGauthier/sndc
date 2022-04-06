@@ -12,7 +12,7 @@ static int filter_process(struct Node* n);
 
 /* DECLARE_MODULE(gaussbp) */
 const struct Module gaussbp = {
-    "gaussbp", "Band pass filter using gaussian convolution",
+    "gaussbp", "filter", "Band pass filter using gaussian convolution",
     {
         {"in",          DATA_BUFFER,                REQUIRED,
                         "input buffer to be filtered"},

@@ -10,7 +10,7 @@ static int echo_process(struct Node* n);
 
 /* DECLARE_MODULE(echom) */
 const struct Module echom = {
-    "echo", "Produces a series of exponentially decaying echoes",
+    "echo", "effect", "Produces a series of exponentially decaying echoes",
     {
         {"in",      DATA_BUFFER,    REQUIRED,
                     "input buffer to apply echo to"},

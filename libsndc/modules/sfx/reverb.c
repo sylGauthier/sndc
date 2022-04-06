@@ -12,7 +12,7 @@ static int reverb_process(struct Node* n);
 
 /* DECLARE_MODULE(reverb) */
 const struct Module reverb = {
-    "reverb", "Implementation of the Freeverb algorithm",
+    "reverb", "effect", "Implementation of the Freeverb algorithm",
     {
         {"in",      DATA_BUFFER,                REQUIRED,
                     "input buffer to apply reverb to, "

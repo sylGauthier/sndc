@@ -6,7 +6,7 @@ static int note_process(struct Node* n);
 
 /* DECLARE_MODULE(note) */
 const struct Module note = {
-    "note", "A simple note to frequency converter",
+    "note", "util", "A simple note to frequency converter",
     {
         {"note",    DATA_STRING,    REQUIRED,
                     "the note's string representation, "

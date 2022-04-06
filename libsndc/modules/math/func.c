@@ -12,7 +12,7 @@ static int func_process(struct Node* n);
 
 /* DECLARE_MODULE(func) */
 const struct Module func = {
-    "func", "A generator for mathematical functions",
+    "func", "math", "A generator for mathematical functions",
     {
         {"expr",        DATA_STRING,    REQUIRED,
                         "mathematical function in infixe notation\n"

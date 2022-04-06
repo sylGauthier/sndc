@@ -7,7 +7,7 @@ static int var_process(struct Node* n);
 
 /* DECLARE_MODULE(var) */
 const struct Module var = {
-    "var", "Variable, copies its input value to its output value",
+    "var", "util", "Variable, copies its input value to its output value",
     {
         {"value",   DATA_FLOAT | DATA_STRING,
                     REQUIRED,

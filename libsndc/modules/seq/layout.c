@@ -10,7 +10,7 @@ static int layout_process(struct Node* n);
 
 /* DECLARE_MODULE(layout) */
 const struct Module layout = {
-    "layout", "A generic layout helper to mix layers together",
+    "layout", "sequencer", "A generic layout helper to mix layers together",
     {
         {"bpm",         DATA_FLOAT,     REQUIRED,
                         "tempo in beats per minute"},

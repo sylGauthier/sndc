@@ -11,7 +11,7 @@ static int env_process(struct Node* n);
 
 /* DECLARE_MODULE(env) */
 const struct Module env = {
-    "envelop", "Apply envelop to input signal",
+    "envelop", "effect", "Apply envelop to input signal",
     {
         {"in",          DATA_BUFFER,    REQUIRED,
                         "input buffer upon which to apply envelop"},

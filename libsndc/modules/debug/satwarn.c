@@ -7,7 +7,8 @@ static int satwarn_process(struct Node* n);
 
 /* DECLARE_MODULE(satwarn) */
 const struct Module satwarn = {
-    "satwarn", "Outputs warning in stderr if input buffer is saturating",
+    "satwarn", "debug",
+    "Outputs warning in stderr if input buffer is saturating",
     {
         {"in",  DATA_BUFFER,    REQUIRED,   "input buffer to check"}
     },

@@ -8,7 +8,7 @@ static int binop_process(struct Node* n);
 
 /* DECLARE_MODULE(binop) */
 const struct Module binop = {
-    "binop", "Binary operation between two buffers or numbers",
+    "binop", "math", "Binary operation between two buffers or numbers",
     {
         {"input0",      DATA_BUFFER | DATA_FLOAT,   REQUIRED, "input #0"},
         {"input1",      DATA_BUFFER | DATA_FLOAT,   REQUIRED, "input #1"},

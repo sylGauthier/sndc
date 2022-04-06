@@ -3,10 +3,28 @@
 
 #include "sndc.h"
 
+static int comp_module(const void* m1, const void* m2) {
+    struct Module* const *mod1 = m1;
+    struct Module* const *mod2 = m2;
+    int r;
+
+    r = strcmp((*mod1)->category, (*mod2)->category);
+    if (r < 0) return -1; else if (r > 0) return 1;
+
+    r = strcmp((*mod1)->name, (*mod2)->name);
+    if (r < 0) return -1; else if (r > 0) return 1;
+    return 0;
+}
+
 static void list_modules() {
     unsigned int i;
+    const char* curCat = "";
     printf("Available modules:\n");
     for (i = 0; i < numModules; i++) {
+        if (strcmp(modules[i]->category, curCat)) {
+            curCat = modules[i]->category;
+            printf("\n  - %s:\n", curCat);
+        }
         printf("    %s - %s\n", modules[i]->name, modules[i]->desc);
     }
 }
@@ -45,7 +63,7 @@ static int print_type(int type) {
 
 static void print_module(const struct Module* module) {
     unsigned int i;
-    printf("%s - %s\n", module->name, module->desc);
+    printf("[%s] %s - %s\n", module->category, module->name, module->desc);
     printf("Inputs:\n");
     for (i = 0; i < MAX_INPUTS; i++) {
         if (module->inputs[i].name) {
@@ -107,6 +125,7 @@ int main(int argc, char** argv) {
         help(argc, argv);
         return 1;
     } else if (!strcmp(argv[1], "-l")) {
+        qsort(modules, numModules, sizeof(struct Module*), comp_module);
         list_modules();
         return 0;
     } else if (!strcmp(argv[1], "-h")) {

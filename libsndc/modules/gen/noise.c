@@ -11,7 +11,7 @@ static int noise_process(struct Node* n);
 
 /* DECLARE_MODULE(noise) */
 const struct Module noise = {
-    "noise", "Noise generator",
+    "noise", "generator", "Noise generator",
     {
         {"duration",    DATA_FLOAT,     REQUIRED,
                         "duration of resulting signal"},
