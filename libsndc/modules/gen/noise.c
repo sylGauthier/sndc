@@ -6,6 +6,7 @@
 
 #include <sndc.h>
 #include <modules/utils.h>
+#include <modules/rand_tools.h>
 
 static int noise_process(struct Node* n);
 
@@ -57,17 +58,18 @@ static int noise_valid(struct Node* n) {
 
 static int noise_process(struct Node* n) {
     struct Buffer* out;
-    unsigned int i, a;
+    unsigned int i;
+    struct MTRand rng;
 
     if (!noise_valid(n)) return 0;
+    mt_rand_init(&rng, 1);
 
     out = &n->outputs[0]->content.buf;
     if (!(out->data = malloc(out->size * sizeof(float)))) {
         return 0;
     }
     for (i = 0; i < out->size; i++) {
-        a = rand();
-        out->data[i] = (float) a / (float) RAND_MAX * 2.0 - 1.0;
+        out->data[i] = runif(&rng, -1, 1);
     }
     n->outputs[0]->ready = 1;
     return 1;
