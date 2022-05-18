@@ -2,7 +2,7 @@ export input freq.input0 as frequency;
 export input envelop.param1 as sustain;
 export input base.amplitude as velocity;
 
-export input base.param as sharpness;
+export input base.param0 as sharpness;
 export input harmonic_offset.input1 as resonance;
 
 export output result.out as out;
@@ -17,7 +17,7 @@ base: osc {
     function: "saw";
     duration: 2;
     freq: freq.out;
-    param: 0.1;
+    param0: 0.1;
 }
 
 harmonic_decay: func {

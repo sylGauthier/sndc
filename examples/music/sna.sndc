@@ -17,7 +17,7 @@ s: snare{}
 kbd: keyboard {
     bpm: bpm.value;
     instrument: bass {
-        sharpness: 0.3;
+        sharpness: 0.15;
     };
     file: "sna.sndk";
 }
