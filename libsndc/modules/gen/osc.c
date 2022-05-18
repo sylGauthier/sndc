@@ -7,13 +7,14 @@
 #include <sndc.h>
 #include <modules/utils.h>
 
-#define RES 2048
 #define OUT 0
 
 #define DEF_FRQ 0
 #define DEF_AMP 0.5
 #define DEF_PAR 0.5
 #define DEF_SPL 44100
+
+#define OSC_MAX_PARAMS 6
 
 static int osc_process(struct Node* n);
 
@@ -41,9 +42,6 @@ const struct Module osc = {
                         "amplitude offset, a constant that gets "
                         "added to the resulting signal"},
 
-        {"param",       DATA_FLOAT,                 OPTIONAL,
-                        "the wave parameter, relevant for 'square' and 'saw'"},
-
         {"duration",    DATA_FLOAT,                 REQUIRED,
                         "duration of resulting signal in seconds"},
 
@@ -52,7 +50,25 @@ const struct Module osc = {
 
         {"interp",      DATA_STRING,                OPTIONAL,
                         "interpolation of the resulting buffer, "
-                        "'step', 'linear' or 'sine'"}
+                        "'step', 'linear' or 'sine'"},
+
+        {"param0",      DATA_FLOAT | DATA_BUFFER,   OPTIONAL,
+                        "wave parameter 0"},
+
+        {"param1",      DATA_FLOAT | DATA_BUFFER,   OPTIONAL,
+                        "wave parameter 1"},
+
+        {"param2",      DATA_FLOAT | DATA_BUFFER,   OPTIONAL,
+                        "wave parameter 2"},
+
+        {"param3",      DATA_FLOAT | DATA_BUFFER,   OPTIONAL,
+                        "wave parameter 3"},
+
+        {"param4",      DATA_FLOAT | DATA_BUFFER,   OPTIONAL,
+                        "wave parameter 4"},
+
+        {"param5",      DATA_FLOAT | DATA_BUFFER,   OPTIONAL,
+                        "wave parameter 5"}
     },
     {
         {"out",         DATA_BUFFER,                REQUIRED,
@@ -70,41 +86,63 @@ enum OscInputType {
     AMP, /* amplitude */
     POF, /* period offset */
     AOF, /* amplitude offset */
-    PRM, /* wave parameter */
     DUR, /* signal duration */
     SPL, /* sampling rate */
     ITP, /* interpolation to use on output */
+
+    PR0, /* wave parameter 0 */
+    PR1, /* wave parameter 1 */
+    PR2, /* wave parameter 2 */
+    PR3, /* wave parameter 3 */
+    PR4, /* wave parameter 4 */
+    PR5, /* wave parameter 5 */
+
     NUM_INPUTS
 };
 
-static const char* funcNames[] = {
-    "sin",
-    "square",
-    "saw",
-    "input",
-    NULL
+struct OscFunction {
+    const char* name;
+    float (*func)(float, float[]);
+    unsigned int numParams;
 };
 
-enum FuncType {
-    SIN,
-    SQUARE,
-    SAW,
-    INPUT
+static float osc_sin(float t, float params[]) {
+    return sin(2. * M_PI * t);
+}
+
+static float osc_square(float t, float params[]) {
+    if (t < 0.5 + params[0]) return 1.;
+    return -1.;
+}
+
+static float osc_saw(float t, float params[]) {
+    float thresh = 0.0001;
+    float p = params[0] > 0.5 - thresh ? (0.5 - thresh) : params[0];
+    p = p < -(0.5 - thresh) ? -(0.5 + thresh) : p;
+
+    if (t < 0.5 + p) {
+        return -1. + 2. * t / (0.5 - p);
+    }
+    return 1. - 2. * (t - 0.5 + p) / (0.5 + p);
+}
+
+static struct OscFunction functions[] = {
+    { "sin",    osc_sin,    0 },
+    { "square", osc_square, 1 },
+    { "saw",    osc_saw,    1 }
 };
+
+static const int numFunctions = sizeof(functions) / sizeof(struct OscFunction);
 
 static int osc_valid(struct Node* n) {
     struct Buffer* out;
 
     GENERIC_CHECK_INPUTS(n, osc);
 
-    if (       !data_string_valid(n->inputs[FUN],
-                                  funcNames,
-                                  osc.inputs[FUN].name,
-                                  n->name)
-            || (n->inputs[ITP] && !data_string_valid(n->inputs[ITP],
-                                                     interpNames,
-                                                     osc.inputs[ITP].name,
-                                                     n->name))) {
+    if (n->inputs[ITP] && !data_string_valid(n->inputs[ITP],
+                                             interpNames,
+                                             osc.inputs[ITP].name,
+                                             n->name)) {
         return 0;
     }
 
@@ -117,66 +155,45 @@ static int osc_valid(struct Node* n) {
     if (!n->inputs[ITP]) out->interp = INTERP_LINEAR;
     else if ((out->interp = data_parse_interp(n->inputs[ITP])) < 0) return 0;
 
+    if (!strcmp(n->inputs[FUN]->content.str, "input") && !n->inputs[WAV]) {
+        fprintf(stderr, "Error: %s: "
+                        "function 'input' requires to set 'waveform'\n",
+                        n->name);
+        return 0;
+    }
+
     out->size = n->inputs[DUR]->content.f * out->samplingRate;
     out->data = NULL;
     return 1;
 }
 
-static void make_sin(float* buf, unsigned int size) {
+static struct OscFunction* get_fun(const char* name) {
     unsigned int i;
-    float t;
-
-    for (i = 0; i < size; i++) {
-        t = (float) i / (float) size;
-        buf[i] = sin(2 * M_PI * t);
+    for (i = 0; i < numFunctions; i++) {
+        if (!strcmp(functions[i].name, name)) {
+            return &functions[i];
+        }
     }
-}
-
-static void make_saw(float* buf, unsigned int size, float param) {
-    unsigned int i, s1, s2;
-    float t, dt1, dt2;
-
-    s1 = 0.5 * param * (float) size;
-    if (s1 == 0) s1 = 1;
-    s2 = (1. - 0.5 * param) * (float) size;
-    if (s2 == size) s2--;
-    if (s1 == s2) s1--;
-    dt1 = 1. / (float) s1;
-    dt2 = -2. / ((float) s2 - (float) s1);
-
-    t = 0;
-    for (i = 0; i < size; i++) {
-        buf[i] = t;
-        if (i < s1 || i > s2) t += dt1;
-        else t += dt2;
-    }
-    return;
-}
-
-static void make_square(float* buf, unsigned int size, float param) {
-    unsigned int i;
-    float t;
-
-    for (i = 0; i < size; i++) {
-        t = (float) i / (float) size;
-        buf[i] = 2 * (t < param) - 1;
-    }
+    return NULL;
 }
 
 static int osc_process(struct Node* n) {
     struct Data* out = n->outputs[OUT];
-    float f, s, d, t, amp, aoff, param, *data, wave[RES];
+    float f, s, d, t, amp, aoff, *data;
     unsigned int i, size;
-    struct Buffer bwave;
+    struct OscFunction* fun;
 
     if (!osc_valid(n)) {
         fprintf(stderr, "Error: %s: invalid inputs\n", n->name);
         return 0;
     }
-
-    bwave.data = wave;
-    bwave.size = RES;
-    bwave.interp = INTERP_LINEAR;
+    if (       !(fun = get_fun(n->inputs[FUN]->content.str))
+            && strcmp(n->inputs[FUN]->content.str, "input")) {
+        fprintf(stderr, "Error: %s: invalid function: %s\n",
+                        n->name,
+                        n->inputs[FUN]->content.str);
+        return 0;
+    }
 
     d = n->inputs[DUR]->content.f;
     if (n->inputs[SPL]) {
@@ -184,51 +201,43 @@ static int osc_process(struct Node* n) {
     } else {
         s = DEF_SPL;
     }
-    if (n->inputs[PRM]) {
-        param = n->inputs[PRM]->content.f;
-        if (param < 0) param = 0;
-        if (param > 1) param = 1;
-    } else {
-        param = DEF_PAR;
-    }
     size = d * s;
     if (!(data = malloc(size * sizeof(float)))) {
         return 0;
     }
 
-    switch (data_which_string(n->inputs[FUN], funcNames)) {
-        case SIN:
-            make_sin(wave, RES);
-            break;
-        case SQUARE:
-            make_square(wave, RES, param);
-            break;
-        case SAW:
-            make_saw(wave, RES, param);
-            break;
-        case INPUT:
-            if (!n->inputs[WAV]) {
-                fprintf(stderr, "Error: %s: missing 'waveform'\n", n->name);
-                return 0;
-            }
-            bwave = n->inputs[WAV]->content.buf;
-            break;
-        default:
-            return 0;
-    }
-
     t = data_float(n->inputs[POF], 0, 0);
     aoff = data_float(n->inputs[AOF], 0, 0);
-    for (i = 0; i < size; i++) {
-        float x = (float) i / (float) size;
+    if (!fun) {
+        for (i = 0; i < size; i++) {
+            float x = (float) i / (float) size;
 
-        f = data_float(n->inputs[FRQ], x, DEF_FRQ);
-        amp = data_float(n->inputs[AMP], x, DEF_AMP);
+            f = data_float(n->inputs[FRQ], x, DEF_FRQ);
+            amp = data_float(n->inputs[AMP], x, DEF_AMP);
 
-        data[i] = amp * interp(&bwave, t) + aoff;
+            data[i] = amp * interp(&n->inputs[WAV]->content.buf, t) + aoff;
 
-        t += f / s;
-        if (t > 1) t -= 1;
+            t += f / s;
+            if (t > 1) t -= 1;
+        }
+    } else {
+        float (*oscf)(float, float[]) = fun->func;
+        for (i = 0; i < size; i++) {
+            float x = (float) i / (float) size;
+            float params[OSC_MAX_PARAMS];
+            int j;
+
+            f = data_float(n->inputs[FRQ], x, DEF_FRQ);
+            amp = data_float(n->inputs[AMP], x, DEF_AMP);
+            for (j = 0; j < fun->numParams; j++) {
+                params[j] = data_float(n->inputs[PR0 + j], x, 0);
+            }
+
+            data[i] = amp * oscf(t, params) + aoff;
+
+            t += f / s;
+            if (t > 1) t -= 1;
+        }
     }
 
     out->content.buf.data = data;
