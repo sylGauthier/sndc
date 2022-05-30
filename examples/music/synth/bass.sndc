@@ -17,7 +17,7 @@ base: osc {
     function: "saw";
     duration: 2;
     freq: freq.out;
-    param0: 0.1;
+    param0: 0.02;
 }
 
 harmonic_decay: func {

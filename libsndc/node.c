@@ -227,19 +227,6 @@ static int load_input(struct Stack* stack,
                     return 1;
                 }
                 break;
-            case FIELD_NODE:
-                if ((d = stack_data_new(stack))) {
-                    d->type = DATA_NODE;
-                    if ((d->content.node = calloc(1, sizeof(struct Node)))
-                            && node_load(stack,
-                                         f->data.node,
-                                         d->content.node)) {
-                        n->inputs[slot] = d;
-                        return 1;
-                    }
-                    free(d->content.node);
-                }
-                break;
         }
         if (d) {
             data_free(d);

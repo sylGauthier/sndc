@@ -105,37 +105,6 @@ static int parse_ref(struct Field* field, char* name) {
     return 0;
 }
 
-static int parse_field(struct SNDCFile*, struct Entry*, int*);
-static void free_entry(struct Entry*);
-
-static int parse_sub_entry(struct SNDCFile* f,
-                           struct Field* field,
-                           char* name) {
-    struct Entry* new = NULL;
-
-    if (!(new = calloc(1, sizeof(*new)))) {
-        fprintf(stderr, "Error: parse_sub_entry: can't alloc entry\n");
-    } else {
-        int err = ERR_NO;
-
-        field->type = FIELD_NODE;
-        field->data.node = new;
-        new->type = name;
-        new->name = NULL;
-
-        while (parse_field(f, new, &err));
-
-        if (err != ERR_NO) {
-            free_entry(new);
-            free(new);
-            field->data.node = NULL;
-            return 0;
-        }
-        return 1;
-    }
-    return 0;
-}
-
 static int parse_data(struct SNDCFile* f,
                       struct Entry* n,
                       struct Field* field) {
@@ -173,9 +142,6 @@ static int parse_data(struct SNDCFile* f,
         case IDENT:
             if ((sv = str_cpy(strVal))) {
                 switch ((token = yylex())) {
-                    case OBRACE:
-                        ok = parse_sub_entry(f, field, sv);
-                        break;
                     case DOT:
                         ok = parse_ref(field, sv);
                         break;
@@ -474,9 +440,6 @@ static void free_entry(struct Entry* entry) {
                     free(f->data.ref.name);
                     free(f->data.ref.field);
                     break;
-                case FIELD_NODE:
-                    free_entry(f->data.node);
-                    free(f->data.node);
                 default:
                     break;
             }

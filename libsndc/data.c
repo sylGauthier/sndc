@@ -20,11 +20,6 @@ void data_free(struct Data* data) {
                 free(data->content.str);
                 data->content.str = NULL;
                 return;
-            case DATA_NODE:
-                node_free(data->content.node);
-                free(data->content.node);
-                data->content.node = NULL;
-                return;
             default:
                 return;
         }

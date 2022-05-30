@@ -1,4 +1,3 @@
-import "synth/bass.sndc" as bass;
 import "drumkit/kick.sndc" as kick;
 import "drumkit/snare.sndc" as snare;
 
@@ -16,9 +15,7 @@ s: snare{}
 
 kbd: keyboard {
     bpm: bpm.value;
-    instrument: bass {
-        sharpness: 0.15;
-    };
+    instrument: "synth/bass.sndc";
     file: "sna.sndk";
 }
 

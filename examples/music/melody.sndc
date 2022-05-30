@@ -12,9 +12,7 @@ k: keyboard {
     bpm: bpm.out;
     divs: 4;
 
-    instrument: simple {
-        shape: "saw";
-    };
+    instrument: "synth/simple.sndc";
     file: "melody.sndk";
 }
 

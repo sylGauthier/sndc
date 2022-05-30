@@ -53,10 +53,6 @@ static int print_type(int type) {
         l += 6 + strlen(sep);
         sep = " | ";
     }
-    if (type & DATA_NODE) {
-        printf("%sNODE", sep);
-        l += 4 + strlen(sep);
-    }
     putc(']', stdout);
     return l;
 }

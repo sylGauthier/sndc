@@ -37,8 +37,7 @@ struct Field {
     enum FieldType {
         FIELD_FLOAT,
         FIELD_STRING,
-        FIELD_REF,
-        FIELD_NODE
+        FIELD_REF
     } type;
     union FieldData {
         float f;
@@ -105,14 +104,12 @@ struct Data {
         DATA_UNKNOWN    = 0,
         DATA_BUFFER     = 1 << 0,
         DATA_FLOAT      = 1 << 1,
-        DATA_STRING     = 1 << 2,
-        DATA_NODE       = 1 << 3
+        DATA_STRING     = 1 << 2
     } type;
     union DataContent {
         struct Buffer buf;
         float f;
         char* str;
-        struct Node* node;
     } content;
     char ready;
 };

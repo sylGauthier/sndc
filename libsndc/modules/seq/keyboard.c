@@ -13,9 +13,10 @@ static int keyboard_teardown(struct Node* n);
 const struct Module keyboard = {
     "keyboard", "sequencer", "Melodic sequencer for a given intrument node",
     {
-        {"instrument",  DATA_NODE,      REQUIRED,
+        {"instrument",  DATA_STRING,    REQUIRED,
                         "the instrument node, "
-                        "a previously declared or imported node"},
+                        "a SNDC file exporting at least the following inputs: "
+                        "frequency, velocity, sustain"},
 
         {"bpm",         DATA_FLOAT,     REQUIRED,
                         "tempo in beats per minute"},
@@ -45,18 +46,44 @@ enum KeyboardInputType {
 };
 
 static int keyboard_setup(struct Node* n) {
-    struct Node* inst;
-    const struct Module* mod;
-    struct Data* data;
+    const char* instPath;
+    char* fullInstPath = NULL;
+    struct Module* mod = NULL;
+    struct Node* instNode = NULL;
+    struct Data* data = NULL;
+    int mi = 0;
 
-    if (!n->inputs[INS] || n->inputs[INS]->type != DATA_NODE) {
+    if (!n->inputs[INS] || n->inputs[INS]->type != DATA_STRING) {
         fprintf(stderr, "Error: %s:"
-                        "instrument is required and must be of type NODE\n",
+                        "instrument is required and must be of type STRING\n",
                         n->name);
         return 0;
     }
-    inst = n->inputs[INS]->content.node;
-    mod = inst->module;
+
+    instPath = n->inputs[INS]->content.str;
+
+    if (       !(mod = malloc(sizeof(*mod)))
+            || !(instNode = malloc(sizeof(*instNode)))
+            || !(data = malloc(4 * sizeof(*data)))
+            || !(fullInstPath = malloc(   strlen(n->path)
+                                        + strlen(instPath) + 1))) {
+        fprintf(stderr, "Error: %s: malloc failed\n", n->name);
+        goto exit_err;
+    }
+    node_init(instNode);
+    data_init(data);
+    data_init(data + 1);
+    data_init(data + 2);
+    data_init(data + 3);
+
+    strcpy(fullInstPath, n->path);
+    strcpy(fullInstPath + strlen(n->path), instPath);
+    fprintf(stderr, "DEBUG: opening instrument in %s\n", fullInstPath);
+    if (!(mi = module_import(mod, "inst", fullInstPath))) {
+        fprintf(stderr, "Error: %s: instrument import failed\n", n->name);
+        goto exit_err;
+    }
+    free(fullInstPath);
 
     if (       module_get_input_slot(mod, "frequency") < 0
             || module_get_input_slot(mod, "velocity") < 0
@@ -69,38 +96,56 @@ static int keyboard_setup(struct Node* n) {
                         "and outputs:\n"
                         "    out [BUFFER]\n",
                         n->name);
-        return 0;
+        goto exit_err;
     }
 
-    if (!(data = calloc(3, sizeof(*data)))) {
-        fprintf(stderr, "Error: %s: can't create data\n", n->name);
-        return 0;
+    instNode->module = mod;
+    if (!(instNode->name = str_cpy("inst"))) {
+        fprintf(stderr, "Error: %s: str_cpy failed\n", n->name);
+        goto exit_err;
     }
+    instNode->setup = mod->setup;
+    instNode->process = mod->process;
+    instNode->teardown = mod->teardown;
 
-    data[0].type = DATA_FLOAT;
-    data[1].type = DATA_FLOAT;
-    data[2].type = DATA_FLOAT;
+    instNode->inputs[module_get_input_slot(mod, "frequency")] = data;
+    instNode->inputs[module_get_input_slot(mod, "velocity")] = data + 1;
+    instNode->inputs[module_get_input_slot(mod, "sustain")] = data + 2;
+    instNode->outputs[module_get_output_slot(mod, "out")] = data + 3;
 
-    inst->inputs[module_get_input_slot(mod, "frequency")] = data;
-    inst->inputs[module_get_input_slot(mod, "velocity")] = data + 1;
-    inst->inputs[module_get_input_slot(mod, "sustain")] = data + 2;
-
-    if (!inst->isSetup && inst->setup && !inst->setup(inst)) {
+    if (instNode->setup && !instNode->setup(instNode)) {
         fprintf(stderr, "Error: %s: could not setup instrument\n", n->name);
-        free(data);
-        return 0;
+        goto exit_err;
     }
+    n->data = instNode;
     n->isSetup = 1;
     return 1;
+
+exit_err:
+    if (mi) {
+        module_free_import(mod);
+    }
+    free(mod);
+    if (instNode) {
+        free((char*)instNode->name);
+    }
+    free(instNode);
+    free(data);
+    free(fullInstPath);
+    return 0;
 }
 
 static int keyboard_teardown(struct Node* n) {
     struct Node* inst;
 
     if (n->isSetup) {
-        inst = n->inputs[INS]->content.node;
+        inst = n->data;
 
         free(inst->inputs[module_get_input_slot(inst->module, "frequency")]);
+        module_free_import((struct Module*)inst->module);
+        free((void*)inst->module);
+        node_free(inst);
+        free(inst);
     }
     return 1;
 }
@@ -245,7 +290,7 @@ static int keyboard_process(struct Node* n) {
 
     GENERIC_CHECK_INPUTS(n, keyboard);
 
-    inst = n->inputs[INS]->content.node;
+    inst = n->data;
     mod = inst->module;
 
     instout = &inst->outputs[module_get_output_slot(mod, "out")]->content.buf;
