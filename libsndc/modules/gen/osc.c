@@ -116,14 +116,20 @@ static float osc_square(float t, float params[]) {
 }
 
 static float osc_saw(float t, float params[]) {
-    float thresh = 0.0001;
-    float p = params[0] > 0.5 - thresh ? (0.5 - thresh) : params[0];
-    p = p < -(0.5 - thresh) ? -(0.5 + thresh) : p;
+    float sign = 1;
+    float t1 = 0.25 + params[0];
 
-    if (t < 0.5 + p) {
-        return -1. + 2. * t / (0.5 - p);
+    if (t > 0.5) {
+        t = 1. - t;
+        sign = -1;
     }
-    return 1. - 2. * (t - 0.5 + p) / (0.5 + p);
+
+    if (t < t1) {
+        return sign * t / t1;
+    } else if (t1 == 0.5) {
+        return 0.;
+    }
+    return sign * (t - 0.5) / (t1 - 0.5);
 }
 
 static struct OscFunction functions[] = {
