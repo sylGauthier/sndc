@@ -216,4 +216,18 @@ void stack_reset(struct Stack* stack);
 
 /****************/
 
+
+/*** sndk file format ***/
+struct Note {
+    unsigned int beat;
+    unsigned int div;
+
+    float freq;
+    float veloc;
+    float sustain;
+};
+
+int sndk_load(const char* filename,
+              struct Note** notes,
+              unsigned int* numNotes);
 #endif

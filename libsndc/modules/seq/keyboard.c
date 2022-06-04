@@ -150,15 +150,6 @@ static int keyboard_teardown(struct Node* n) {
     return 1;
 }
 
-struct Note {
-    unsigned int beat;
-    unsigned int div;
-
-    float freq;
-    float veloc;
-    float sustain;
-};
-
 static int note_comp(const void* a, const void* b) {
     const struct Note *n1 = a, *n2 = b;
 
@@ -172,72 +163,19 @@ static int note_comp(const void* a, const void* b) {
 static int load_notes(struct Node* n,
                       struct Note** notes,
                       unsigned int* numNotes) {
-    FILE* kfile = NULL;
     char *fullpath = NULL, *filename;
-    unsigned int noteSize = 16, ok = 1;
+    unsigned int ok = 1;
 
     filename = n->inputs[SEQ]->content.str;
-    *notes = NULL;
-    *numNotes = 0;
 
     if (!(fullpath = malloc(strlen(n->path) + strlen(filename) + 1))) {
         fprintf(stderr, "Error: load_notes: can't allocate fullpath\n");
-    } else if (!strcpy(fullpath, n->path)
-            || !strcpy(fullpath + strlen(n->path), filename)
-            || !(kfile = fopen(fullpath, "r"))) {
-        fprintf(stderr, "Error: load_notes: can't open notes file: %s\n",
-                filename);
-    } else if (!(*notes = calloc(noteSize, sizeof(struct Note)))) {
-        fprintf(stderr, "Error: load_notes: can't allocate notes\n");
     } else {
-        struct Note* curNote = *notes;
-        int n;
-        char note[4];
-
-        while ((n = fscanf(kfile, "%u:%u %3s %f %f\n",
-                           &curNote->beat,
-                           &curNote->div,
-                           note,
-                           &curNote->veloc,
-                           &curNote->sustain)) != EOF) {
-            if (n == 5) {
-                (*numNotes)++;
-                if (!note_to_freq(note, &curNote->freq)) {
-                    fprintf(stderr, "Error: %s: invalid note: %s\n",
-                            fullpath, note);
-                    ok = 0;
-                    break;
-                }
-                if (*numNotes >= noteSize) {
-                    void* tmp;
-
-                    noteSize *= 2;
-                    if (!(tmp = realloc(*notes, noteSize * sizeof(**notes)))) {
-                        fprintf(stderr, "Error: load_notes: "
-                                        "can't realloc notes\n");
-                        ok = 0;
-                        break;
-                    }
-                    *notes = tmp;
-                }
-                curNote = *notes + *numNotes;
-            } else {
-                char c;
-                fprintf(stderr, "Warning: load_notes: "
-                                "skipped malformatted line\n");
-                do {
-                      c = fgetc(kfile);
-                } while (c != '\n');
-            }
-        }
-    }
-    if (!ok) {
-        free(*notes);
-        *notes = NULL;
-        *numNotes = 0;
+        strcpy(fullpath, n->path);
+        strcpy(fullpath + strlen(n->path), filename);
+        ok = sndk_load(fullpath, notes, numNotes);
     }
     free(fullpath);
-    if (kfile) fclose(kfile);
     return ok;
 }
 
