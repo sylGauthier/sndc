@@ -221,6 +221,7 @@ void stack_reset(struct Stack* stack);
 struct Note {
     unsigned int beat;
     unsigned int div;
+    int pitchID;
 
     float freq;
     float veloc;
@@ -230,4 +231,8 @@ struct Note {
 int sndk_load(const char* filename,
               struct Note** notes,
               unsigned int* numNotes);
+int sndk_load_fixed(const char* filename,
+                    struct Note* notes,
+                    unsigned int* numNotes,
+                    unsigned int size);
 #endif

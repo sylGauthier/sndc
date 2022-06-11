@@ -169,10 +169,10 @@ static float freqs[12] = {
 };
 
 int note_to_freq(const char* note, float* freq) {
-    int offset = 0, octave = 0;
+    int offset = 0, octave = 0, pitchID;
     const char* cur = note;
 
-    if (strlen(note) < 2) return 0;
+    if (strlen(note) < 2) return -1;
     switch (*cur) {
         case 'A': offset = 9; break;
         case 'B': offset = 11; break;
@@ -181,15 +181,15 @@ int note_to_freq(const char* note, float* freq) {
         case 'E': offset = 4; break;
         case 'F': offset = 5; break;
         case 'G': offset = 7; break;
-        default: return 0;
+        default: return -1;
     }
     cur++;
     if (*cur == '#' || *cur == 'b') {
-        if (strlen(cur) < 2) return 0;
+        if (strlen(cur) < 2) return -1;
         offset += (*cur == '#' ? 1 : -1);
         cur++;
     }
-    if (*cur < '0' || *cur > '9') return 0;
+    if (*cur < '0' || *cur > '9') return -1;
     octave = (*cur - '0');
 
     if (offset < 0) {
@@ -202,6 +202,7 @@ int note_to_freq(const char* note, float* freq) {
     if (octave < 0) octave = 0;
     if (octave > 8) octave = 8;
     *freq = freqs[offset];
+    pitchID = octave * 12 + offset;
     for (; octave < 8; octave++) *freq /= 2.;
-    return 1;
+    return pitchID;
 }
