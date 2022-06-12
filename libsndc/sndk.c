@@ -81,6 +81,7 @@ int sndk_load_fixed(const char* filename,
     if (!(kfile = fopen(filename, "r"))) {
         fprintf(stderr, "Error: sndk_load: can't open notes file: %s\n",
                 filename);
+        ok = 0;
     } else {
         struct Note* curNote = notes;
         int n;
@@ -123,4 +124,34 @@ int sndk_load_fixed(const char* filename,
     }
     if (kfile) fclose(kfile);
     return ok;
+}
+
+static const char* noteName[] = {
+    "C", "Db", "D", "Eb", "E", "F", "Gb", "G", "Ab", "A", "Bb", "B"
+};
+
+int sndk_write(const char* filename,
+               const struct Note* notes,
+               unsigned int numNotes) {
+    FILE* out;
+
+    if (!(out = fopen(filename, "w"))) {
+        fprintf(stderr, "Error: sndk_write: can't open %s for writing\n",
+                filename);
+    } else {
+        unsigned int i;
+
+        for (i = 0; i < numNotes; i++) {
+            fprintf(out, "%d:%d %s%d %g %g\n",
+                    notes[i].beat,
+                    notes[i].div,
+                    noteName[notes[i].pitchID%12],
+                    notes[i].pitchID / 12,
+                    notes[i].veloc,
+                    notes[i].sustain);
+        }
+        fclose(out);
+        return 1;
+    }
+    return 0;
 }

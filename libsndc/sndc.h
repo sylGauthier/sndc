@@ -235,4 +235,7 @@ int sndk_load_fixed(const char* filename,
                     struct Note* notes,
                     unsigned int* numNotes,
                     unsigned int size);
+int sndk_write(const char* filename,
+               const struct Note* notes,
+               unsigned int numNotes);
 #endif
