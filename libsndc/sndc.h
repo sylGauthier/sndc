@@ -238,4 +238,5 @@ int sndk_load_fixed(const char* filename,
 int sndk_write(const char* filename,
                const struct Note* notes,
                unsigned int numNotes);
+float pitch_to_freq(int pitchID);
 #endif

@@ -206,3 +206,10 @@ int note_to_freq(const char* note, float* freq) {
     for (; octave < 8; octave++) *freq /= 2.;
     return pitchID;
 }
+
+float pitch_to_freq(int pitch) {
+    int o = pitch / 12;
+    float freq = freqs[pitch % 12];
+    for (; o < 8; o++) freq /= 2.;
+    return freq;
+}
